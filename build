@@ -1,0 +1,7 @@
+#!/bin/bash
+
+cd www
+npm run build
+cd ..
+rm -rf app/Yallpaper/Resources/*
+cp -R www/dist/* app/Yallpaper/Resources/
