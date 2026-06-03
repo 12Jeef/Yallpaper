@@ -2,15 +2,15 @@ import "./style.css";
 import vertexShaderSource from "./glsl/main.vert";
 import fragmentShaderSource from "./glsl/main.frag";
 
-const canvas = document.querySelector("#app > canvas");
-if (!(canvas instanceof HTMLCanvasElement)) {
-  document.body.innerHTML = "Canvas element not found";
-  throw new Error("Canvas element not found");
+const canvasBg = document.querySelector("#app > canvas#bg");
+if (!(canvasBg instanceof HTMLCanvasElement)) {
+  document.body.innerHTML = "Canvas (BG) element not found";
+  throw new Error("Canvas (BG) element not found");
 }
-const gl = canvas.getContext("webgl");
+const gl = canvasBg.getContext("webgl");
 if (!gl) {
-  document.body.innerHTML = "Failed to get canvas context";
-  throw new Error("Failed to get canvas context");
+  document.body.innerHTML = "Failed to get canvas (BG) context";
+  throw new Error("Failed to get canvas (BG) context");
 }
 
 function createShader(gl: WebGLRenderingContext, type: number, source: string) {
@@ -55,10 +55,10 @@ const tStart = Date.now() / 1e3;
 const render = () => {
   const t = Date.now() / 1e3 - tStart;
 
-  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.viewport(0, 0, canvasBg.width, canvasBg.height);
 
   gl.uniform1f(timeLoc, t);
-  gl.uniform2f(resolutionLoc, canvas.width, canvas.height);
+  gl.uniform2f(resolutionLoc, canvasBg.width, canvasBg.height);
 
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 };
@@ -69,10 +69,10 @@ const update = () => {
 update();
 
 const onResize = () => {
-  canvas.style.width = `${window.innerWidth}px`;
-  canvas.style.height = `${window.innerHeight}px`;
-  canvas.width = window.innerWidth * window.devicePixelRatio;
-  canvas.height = window.innerHeight * window.devicePixelRatio;
+  canvasBg.style.width = `${window.innerWidth}px`;
+  canvasBg.style.height = `${window.innerHeight}px`;
+  canvasBg.width = window.innerWidth * window.devicePixelRatio;
+  canvasBg.height = window.innerHeight * window.devicePixelRatio;
   render();
 };
 onResize();

@@ -6,10 +6,6 @@ void main() {
 precision mediump float;
 #endif
 
-#define ANGLE 0.2617993878
-#define NOISE_SCALE 0.5
-#define Y_SCALE 5.0
-
 uniform float u_time;
 uniform vec2 u_resolution;
 
@@ -644,19 +640,308 @@ FBM_NOISE_TYPE fbm(vec3 p, float tileLength) {
     return total / normalization;
 }
 #endif
+#ifndef RANDOM_SCALE
+#ifdef RANDOM_HIGHER_RANGE
+#define RANDOM_SCALE vec4(.1031, .1030, .0973, .1099)
+#else
+#define RANDOM_SCALE vec4(443.897, 441.423, .0973, .1099)
+#endif
+#endif
+
+#ifndef FNC_RANDOM
+#define FNC_RANDOM
+float random(in float x) {
+#ifdef RANDOM_SINLESS
+    x = fract(x * RANDOM_SCALE.x);
+    x *= x + 33.33;
+    x *= x + x;
+    return fract(x);
+#else
+    return fract(sin(x) * 43758.5453);
+#endif
+}
+
+float random(in vec2 st) {
+#ifdef RANDOM_SINLESS
+    vec3 p3  = fract(vec3(st.xyx) * RANDOM_SCALE.xyz);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+#else
+    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453);
+#endif
+}
+
+float random(in vec3 pos) {
+#ifdef RANDOM_SINLESS
+    pos  = fract(pos * RANDOM_SCALE.xyz);
+    pos += dot(pos, pos.zyx + 31.32);
+    return fract((pos.x + pos.y) * pos.z);
+#else
+    return fract(sin(dot(pos.xyz, vec3(70.9898, 78.233, 32.4355))) * 43758.5453123);
+#endif
+}
+
+float random(in vec4 pos) {
+#ifdef RANDOM_SINLESS
+    pos = fract(pos * RANDOM_SCALE);
+    pos += dot(pos, pos.wzxy + 33.33);
+    return fract((pos.x + pos.y) * (pos.z + pos.w));
+#else
+    float dot_product = dot(pos, vec4(12.9898,78.233,45.164,94.673));
+    return fract(sin(dot_product) * 43758.5453);
+#endif
+}
+
+vec2 random2(float p) {
+    vec3 p3 = fract(vec3(p) * RANDOM_SCALE.xyz);
+    p3 += dot(p3, p3.yzx + 19.19);
+    return fract((p3.xx + p3.yz) * p3.zy);
+}
+
+vec2 random2(vec2 p) {
+    vec3 p3 = fract(p.xyx * RANDOM_SCALE.xyz);
+    p3 += dot(p3, p3.yzx + 19.19);
+    return fract((p3.xx + p3.yz) * p3.zy);
+}
+
+vec2 random2(vec3 p3) {
+    p3 = fract(p3 * RANDOM_SCALE.xyz);
+    p3 += dot(p3, p3.yzx + 19.19);
+    return fract((p3.xx + p3.yz) * p3.zy);
+}
+
+vec3 random3(float p) {
+    vec3 p3 = fract(vec3(p) * RANDOM_SCALE.xyz);
+    p3 += dot(p3, p3.yzx + 19.19);
+    return fract((p3.xxy + p3.yzz) * p3.zyx); 
+}
+
+vec3 random3(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * RANDOM_SCALE.xyz);
+    p3 += dot(p3, p3.yxz + 19.19);
+    return fract((p3.xxy + p3.yzz) * p3.zyx);
+}
+
+vec3 random3(vec3 p) {
+    p = fract(p * RANDOM_SCALE.xyz);
+    p += dot(p, p.yxz + 19.19);
+    return fract((p.xxy + p.yzz) * p.zyx);
+}
+
+vec4 random4(float p) {
+    vec4 p4 = fract(p * RANDOM_SCALE);
+    p4 += dot(p4, p4.wzxy + 19.19);
+    return fract((p4.xxyz + p4.yzzw) * p4.zywx);   
+}
+
+vec4 random4(vec2 p) {
+    vec4 p4 = fract(p.xyxy * RANDOM_SCALE);
+    p4 += dot(p4, p4.wzxy + 19.19);
+    return fract((p4.xxyz + p4.yzzw) * p4.zywx);
+}
+
+vec4 random4(vec3 p) {
+    vec4 p4 = fract(p.xyzx * RANDOM_SCALE);
+    p4 += dot(p4, p4.wzxy + 19.19);
+    return fract((p4.xxyz + p4.yzzw) * p4.zywx);
+}
+
+vec4 random4(vec4 p4) {
+    p4 = fract(p4  * RANDOM_SCALE);
+    p4 += dot(p4, p4.wzxy + 19.19);
+    return fract((p4.xxyz + p4.yzzw) * p4.zywx);
+}
+#endif
+#ifndef DIST_FNC
+#define DIST_FNC distEuclidean
+#endif
+
+#ifndef DIST_MINKOWSKI_P
+#define DIST_MINKOWSKI_P 2.0 
+#endif
+
+#ifndef FNC_DIST
+#define FNC_DIST
+
+float distEuclidean(vec2 a, vec2 b) { return distance(a, b); }
+float distEuclidean(vec3 a, vec3 b) { return distance(a, b); }
+float distEuclidean(vec4 a, vec4 b) { return distance(a, b); }
+
+float distManhattan(vec2 a, vec2 b) { return abs(a.x - b.x) + abs(a.y - b.y); }
+float distManhattan(vec3 a, vec3 b) { return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z); }
+float distManhattan(vec4 a, vec4 b) { return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z) + abs(a.w - b.w); }
+
+float distChebychev(vec2 a, vec2 b) { return max(abs(a.x - b.x), abs(a.y - b.y)); }
+float distChebychev(vec3 a, vec3 b) { return max(abs(a.x - b.x), max(abs(a.y - b.y), abs(a.z - b.z))); }
+float distChebychev(vec4 a, vec4 b) { return max(abs(a.x - b.x), max(abs(a.y - b.y), max(abs(a.z - b.z), abs(a.w - b.w) ))); }
+
+float distMinkowski(vec2 a, vec2 b) { return  pow(pow(abs(a.x - b.x), DIST_MINKOWSKI_P) + pow(abs(a.y - b.y), DIST_MINKOWSKI_P), 1.0 / DIST_MINKOWSKI_P); }
+float distMinkowski(vec3 a, vec3 b) { return  pow(pow(abs(a.x - b.x), DIST_MINKOWSKI_P) + pow(abs(a.y - b.y), DIST_MINKOWSKI_P) + pow(abs(a.z - b.z), DIST_MINKOWSKI_P), 1.0 / DIST_MINKOWSKI_P); }
+float distMinkowski(vec4 a, vec4 b) { return  pow(pow(abs(a.x - b.x), DIST_MINKOWSKI_P) + pow(abs(a.y - b.y), DIST_MINKOWSKI_P) + pow(abs(a.z - b.z), DIST_MINKOWSKI_P) + pow(abs(a.w - b.w), DIST_MINKOWSKI_P), 1.0 / DIST_MINKOWSKI_P); }
+
+float dist(vec2 a, vec2 b) { return DIST_FNC(a, b); }
+float dist(vec3 a, vec3 b) { return DIST_FNC(a, b); }
+float dist(vec4 a, vec4 b) { return DIST_FNC(a, b); }
+
+#endif
+
+#ifndef FNC_WORLEY
+#define FNC_WORLEY
+
+#ifndef WORLEY_JITTER
+#define WORLEY_JITTER 1.0
+#endif
+
+#ifndef WORLEY_DIST_FNC
+#define WORLEY_DIST_FNC distEuclidean
+#endif
+
+vec2 worley2(vec2 p){
+    vec2 n = floor( p );
+    vec2 f = fract( p );
+
+    float distF1 = 1.0;
+    float distF2 = 1.0;
+    vec2 off1 = vec2(0.0); 
+    vec2 pos1 = vec2(0.0);
+    vec2 off2 = vec2(0.0);
+    vec2 pos2 = vec2(0.0);
+    for( int j= -1; j <= 1; j++ ) {
+        for( int i=-1; i <= 1; i++ ) {	
+            vec2  g = vec2(i,j);
+            vec2  o = random2( n + g ) * WORLEY_JITTER;
+            vec2  p = g + o;
+            float d = WORLEY_DIST_FNC(p, f);
+            if (d < distF1) {
+                distF2 = distF1;
+                distF1 = d;
+                off2 = off1;
+                off1 = g;
+                pos2 = pos1;
+                pos1 = p;
+            }
+            else if (d < distF2) {
+                distF2 = d;
+                off2 = g;
+                pos2 = p;
+            }
+        }
+    }
+
+    return vec2(distF1, distF2);
+}
+
+float worley(vec2 p){ return 1.0-worley2(p).x; }
+
+vec2 worley2(vec3 p) {
+    vec3 n = floor( p );
+    vec3 f = fract( p );
+
+    float distF1 = 1.0;
+    float distF2 = 1.0;
+    vec3 off1 = vec3(0.0);
+    vec3 pos1 = vec3(0.0);
+    vec3 off2 = vec3(0.0);
+    vec3 pos2 = vec3(0.0);
+    for( int k = -1; k <= 1; k++ ) {
+        for( int j= -1; j <= 1; j++ ) {
+            for( int i=-1; i <= 1; i++ ) {	
+                vec3  g = vec3(i,j,k);
+                vec3  o = random3( n + g ) * WORLEY_JITTER;
+                vec3  p = g + o;
+                float d = WORLEY_DIST_FNC(p, f);
+                if (d < distF1) {
+                    distF2 = distF1;
+                    distF1 = d;
+                    off2 = off1;
+                    off1 = g;
+                    pos2 = pos1;
+                    pos1 = p;
+                }
+                else if (d < distF2) {
+                    distF2 = d;
+                    off2 = g;
+                    pos2 = p;
+                }
+            }
+        }
+    }
+
+    return vec2(distF1, distF2);
+}
+
+float worley(vec3 p){ return 1.0-worley2(p).x; }
+
+#endif
+
+vec2 rotate(vec2 coord, float angle) {
+  float s = sin(angle);
+  float c = cos(angle);
+  return vec2(coord.x * c - coord.y * s, coord.x * s + coord.y * c);
+}
+
+vec3 project(vec2 coord) {
+  vec2 origin = u_resolution * vec2(1.5, 3.5);
+  float r = length(coord - origin);
+  float theta = atan(coord.y - origin.y, coord.x - origin.x);
+  float theta_low = atan(0.0 - origin.y, u_resolution.x - origin.x);
+  float theta_high = atan(u_resolution.y - origin.y, 0.0 - origin.x);
+  float theta_t = (theta - theta_low) / (theta_high - theta_low) + 0.1;
+  float y = theta_t * length(u_resolution);
+  return vec3(r, y, theta_t);
+}
+
+float stars(vec2 coord, float noise_scale, float size, float edge) {
+  vec2 size_coord = coord / 3000.0 / noise_scale;
+  vec2 points_coord = coord / 500.0 / noise_scale;
+
+  float star_size = fbm(vec3(size_coord, u_time * 0.01));
+  float star_points = worley(vec3(points_coord, u_time * 0.01)) * (star_size * 0.75 + mix(0.5, 0.875, size));
+
+  return pow(max(0.0, star_points), edge);
+}
+
+float stars(vec2 coord, float noise_scale, float size) {
+  return stars(coord, noise_scale, size, 15.0);
+}
+
+float cloud(vec2 coord, vec2 scale, float edge) {
+  vec2 noise_coord = coord / 1000.0 / scale;
+  return pow(fbm(vec3(noise_coord, u_time * 0.01)) * 0.5 + 0.5, edge);
+}
 
 void main(void) {
-  vec2 rotated = vec2(
-    cos(ANGLE) * (gl_FragCoord.x - u_resolution.x / 2.0) - sin(ANGLE) * (gl_FragCoord.y - u_resolution.y / 2.0),
-    sin(ANGLE) * (gl_FragCoord.x - u_resolution.x / 2.0) + cos(ANGLE) * (gl_FragCoord.y - u_resolution.y / 2.0)
-  ) + u_resolution / 2.0;
-  vec2 uv = rotated / u_resolution.xy;
-  vec2 coord = rotated / 500.0 * NOISE_SCALE * vec2(1.0, Y_SCALE);
-  float mag = 1.0 - 2.0 * sqrt(pow(uv.x - 0.5, 2.0) + pow((uv.y - 0.5) * Y_SCALE, 2.0));
-  mag = max(mag, 0.0);
+  vec4 color = vec4(0.0, 0.0, 0.1, 1.0);
 
-  vec4 color = vec4(vec3(0.0), 1.0);
-  color = mix(color, vec4(vec3(1.0), 1.0), (pow(fbm(vec3(coord + vec2(u_time * 0.1, 0.0), u_time * 0.1)), 2.0) + 0.1) * mag);
+  vec3 proj_coord_data = project(vec2(gl_FragCoord.x, u_resolution.y - gl_FragCoord.y));
+  vec2 proj_coord = proj_coord_data.xy;
+  float theta_t = proj_coord_data.z;
+
+  float milky_way_mask = pow(1.0 / (1.0 + abs(theta_t - 0.5) * 2.0), 4.0) * 2.0;
+
+  float milky_way_1 = cloud(proj_coord + vec2(200.0, 0.0) * u_time, vec2(2.0, 0.5), 5.0) * 0.5 * milky_way_mask + 0.1 * milky_way_mask;
+  color += milky_way_1 * vec4(mix(0.4, 0.8, milky_way_1), 0.6, 1.0, 1.0) * 0.75;
+
+  float milky_way_2 = cloud(proj_coord + vec2(100.0, 0.0) * u_time, vec2(4.0, 2.0), 3.0) * 0.75 * milky_way_mask + 0.1 * milky_way_mask;
+  color += milky_way_2 * vec4(mix(0.2, 0.4, milky_way_2), 0.1 * milky_way_2, 0.75, 1.0) * 1.0;
+
+  float milky_way_3 = cloud(proj_coord + vec2(25.0, 0.0) * u_time, vec2(0.5, 0.5), 3.0) * 0.75 * pow(milky_way_mask / 2.0 + 0.5, 7.0);
+  milky_way_3 = clamp(milky_way_3, 0.0, 2.0);
+  color += milky_way_3 * vec4(1.0, mix(0.4, 0.8, milky_way_3), mix(0.25, 0.75, milky_way_3), 1.0) * 0.5;
+
+  float milky_way = min(2.0, milky_way_1 * 1.5 + milky_way_2 * 0.5);
+
+  float stars_1 = stars(gl_FragCoord.xy, 0.05, 1.0) * milky_way;
+  color += stars_1 * vec4(1.0, mix(0.1, 0.8, stars_1), mix(0.0, 1.0, stars_1), 1.0);
+
+  float stars_2 = stars(gl_FragCoord.xy, 0.05, 2.0) * pow(milky_way + 0.25, 10.0);
+  color += stars_2 * vec4(mix(0.25, 1.0, stars_2), 0.9, 1.0, 1.0);
+
+  float milky_way_4 = cloud(proj_coord + vec2(10.0, 0.0) * u_time, vec2(0.5, 0.25), 3.0) * pow(milky_way_mask / 2.0 + 0.75, 4.0);
+  color.xyz = mix(color.xyz, mix(vec3(0.05, 0.0, 0.2), vec3(0.0, 0.0, 0.2), pow(clamp(milky_way_4 - 1.0, 0.0, 1.0), 3.0)), clamp(milky_way_4, 0.0, 1.0));
+
+  color.xyz += vec3(0.0, 0.15, 0.2) * clamp(1.0 - 1.5 * (gl_FragCoord.y / u_resolution.y), 0.0, 1.0);
+  color.xyz += vec3(0.05, 0.15, 0.2) * clamp(1.0 - 3.5 * (gl_FragCoord.y / u_resolution.y), 0.0, 1.0);
 
   gl_FragColor = color;
-}`,n=document.querySelector(`#app > canvas`);if(!(n instanceof HTMLCanvasElement))throw document.body.innerHTML=`Canvas element not found`,Error(`Canvas element not found`);var r=n.getContext(`webgl`);if(!r)throw document.body.innerHTML=`Failed to get canvas context`,Error(`Failed to get canvas context`);function i(e,t,n){let r=e.createShader(t);if(!r)throw Error(`Failed to create shader`);if(e.shaderSource(r,n),e.compileShader(r),!e.getShaderParameter(r,e.COMPILE_STATUS))throw document.body.innerHTML=`Failed to compile shader: `+e.getShaderInfoLog(r),Error(`Failed to compile shader`+e.getShaderInfoLog(r));return r}var a=i(r,r.VERTEX_SHADER,e),o=i(r,r.FRAGMENT_SHADER,t),s=r.createProgram();r.attachShader(s,a),r.attachShader(s,o),r.linkProgram(s),r.useProgram(s);var c=new Float32Array([-1,-1,1,-1,-1,1,1,1]),l=r.createBuffer();r.bindBuffer(r.ARRAY_BUFFER,l),r.bufferData(r.ARRAY_BUFFER,c,r.DYNAMIC_DRAW);var u=r.getAttribLocation(s,`u_position`);r.enableVertexAttribArray(u),r.vertexAttribPointer(u,2,r.FLOAT,!1,0,0);var d=r.getUniformLocation(s,`u_time`),f=r.getUniformLocation(s,`u_resolution`),p=Date.now()/1e3,m=()=>{let e=Date.now()/1e3-p;r.viewport(0,0,n.width,n.height),r.uniform1f(d,e),r.uniform2f(f,n.width,n.height),r.drawArrays(r.TRIANGLE_STRIP,0,4)},h=()=>{window.requestAnimationFrame(h),m()};h();var g=()=>{n.style.width=`${window.innerWidth}px`,n.style.height=`${window.innerHeight}px`,n.width=window.innerWidth*window.devicePixelRatio,n.height=window.innerHeight*window.devicePixelRatio,m()};g(),new ResizeObserver(()=>{g()}).observe(document.body);
+}`,n=document.querySelector(`#app > canvas#bg`);if(!(n instanceof HTMLCanvasElement))throw document.body.innerHTML=`Canvas (BG) element not found`,Error(`Canvas (BG) element not found`);var r=n.getContext(`webgl`);if(!r)throw document.body.innerHTML=`Failed to get canvas (BG) context`,Error(`Failed to get canvas (BG) context`);function i(e,t,n){let r=e.createShader(t);if(!r)throw Error(`Failed to create shader`);if(e.shaderSource(r,n),e.compileShader(r),!e.getShaderParameter(r,e.COMPILE_STATUS))throw document.body.innerHTML=`Failed to compile shader: `+e.getShaderInfoLog(r),Error(`Failed to compile shader`+e.getShaderInfoLog(r));return r}var a=i(r,r.VERTEX_SHADER,e),o=i(r,r.FRAGMENT_SHADER,t),s=r.createProgram();r.attachShader(s,a),r.attachShader(s,o),r.linkProgram(s),r.useProgram(s);var c=new Float32Array([-1,-1,1,-1,-1,1,1,1]),l=r.createBuffer();r.bindBuffer(r.ARRAY_BUFFER,l),r.bufferData(r.ARRAY_BUFFER,c,r.DYNAMIC_DRAW);var u=r.getAttribLocation(s,`u_position`);r.enableVertexAttribArray(u),r.vertexAttribPointer(u,2,r.FLOAT,!1,0,0);var d=r.getUniformLocation(s,`u_time`),f=r.getUniformLocation(s,`u_resolution`),p=Date.now()/1e3,m=()=>{let e=Date.now()/1e3-p;r.viewport(0,0,n.width,n.height),r.uniform1f(d,e),r.uniform2f(f,n.width,n.height),r.drawArrays(r.TRIANGLE_STRIP,0,4)},h=()=>{window.requestAnimationFrame(h),m()};h();var g=()=>{n.style.width=`${window.innerWidth}px`,n.style.height=`${window.innerHeight}px`,n.width=window.innerWidth*window.devicePixelRatio,n.height=window.innerHeight*window.devicePixelRatio,m()};g(),new ResizeObserver(()=>{g()}).observe(document.body);

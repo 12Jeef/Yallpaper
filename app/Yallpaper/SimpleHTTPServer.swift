@@ -42,6 +42,8 @@ final class SimpleHTTPServer {
 
             let fileData = (try? Data(contentsOf: fileURL)) ?? Data("404".utf8)
             let mime = self.mime(for: fileURL.path)
+            
+            print(path, mime)
 
             let response = self.buildResponse(
                 body: fileData,
@@ -86,6 +88,8 @@ final class SimpleHTTPServer {
         if path.hasSuffix(".html") { return "text/html" }
         if path.hasSuffix(".js") { return "text/javascript" }
         if path.hasSuffix(".css") { return "text/css" }
+        if path.hasSuffix(".png") { return "image/png" }
+        if path.hasSuffix(".svg") { return "image/svg+xml" }
         return "application/octet-stream"
     }
 }
