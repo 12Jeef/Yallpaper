@@ -65,30 +65,6 @@ fn cloud(coord: vec2f, scale: vec2f, edge: f32) -> f32 {
   return pow(fbm3(vec3f(noise_coord.x, noise_coord.y, uniforms.time * 0.01)) * 0.5 + 0.5, edge);
 }
 
-fn grass_y(x: f32) -> f32 {
-  let t = x / uniforms.resolution.x;
-  let h = (0.5 * (sin(2.09439510239 + (-1.57079632679 - 2.09439510239) * t) + 1.0) * 0.15 + 0.05) * uniforms.resolution.y;
-  let y = uniforms.resolution.y - h;
-  return y;
-}
-
-fn grass_blade(coord: vec2f, x: f32) -> f32 {
-  let y = grass_y(x);
-  let origin = vec2f(x, y + 10.0);
-  let scale = 0.5 * fbm3(vec3f(x / 100.0, 0.0, 0.0)) + 0.5;
-  let size = mix(0.0, 150.0, scale);
-  let w = mix(25.0, 25.0, scale);
-  let angle_t = fbm3(vec3f(x / 100.0 + 0.1 * uniforms.time, 0.0, 0.0)) * 0.5 + 0.5;
-  let angle = mix(0.0872664626, 1.0471975512, angle_t);
-  let s = sin(angle);
-  let c = cos(angle);
-  let end = origin - vec2f(s, c) * size;
-  let t = (coord.y - origin.y) / (end.y - origin.y);
-  let left = mix(origin.x - 0.5 * w, end.x, t);
-  let right = mix(origin.x + 0.5 * w, end.x, t);
-  return 1.0 - (step(0.0, t) * step(t, 1.0) * step(left, coord.x) * step(coord.x, right));
-}
-
 @toy @fragment
 fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   var color = vec3f(0.0, 0.0, 0.1);
