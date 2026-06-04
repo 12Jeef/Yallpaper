@@ -12,4 +12,17 @@ body,
   display: block;
   margin: 0;
   padding: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#app > div#grass-blur {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50vh;
+  mask: linear-gradient(-90deg, black, transparent);
+  backdrop-filter: blur(2px);
 }

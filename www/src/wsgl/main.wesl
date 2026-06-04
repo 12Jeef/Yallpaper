@@ -97,7 +97,7 @@ fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let milky_way_4 = cloud(proj_coord + vec2f(10.0, 0.0) * uniforms.time, vec2f(0.5, 0.25), 3.0) * pow(milky_way_mask / 2.0 + 0.75, 4.0);
   color = mix(color, mix(vec3f(0.05, 0.0, 0.2), vec3f(0.0, 0.0, 0.2), pow(clamp(milky_way_4 - 1.0, 0.0, 1.0), 3.0)), clamp(milky_way_4, 0.0, 1.0));
 
-  let gradient_y = pos.y / uniforms.resolution.y - pos.x / uniforms.resolution.x * 0.1;
+  let gradient_y = pos.y / uniforms.resolution.y - pos.x / uniforms.resolution.x * 0.1 + 0.05;
   color = color + vec3f(0.0, 0.15, 0.2) * clamp(1.0 - 1.5 * (1.0 - gradient_y), 0.0, 1.0);
   color = color + vec3f(0.05, 0.15, 0.2) * clamp(1.0 - 3.5 * (1.0 - gradient_y), 0.0, 1.0);
 
