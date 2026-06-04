@@ -220,14 +220,14 @@ async function initGrass() {
   let zMax = 0;
 
   const fireflies: Firefly[] = [];
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 10; i++) {
     fireflies.push({
-      pos: [sigpow(Math.random() - 0.25, 1.5) + 0.25, Math.random()],
+      pos: [sigpow(Math.random() - 0.35, 1.5) + 0.35, Math.random()],
       r: Math.random(),
       seed: [Math.random(), Math.random(), Math.random(), Math.random()],
     });
   }
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 3; i++) {
     fireflies.push({
       pos: [mixN(1.5, 2.5, Math.random()), mixN(-0.75, 0.25, Math.random())],
       r: Math.random(),
@@ -336,7 +336,7 @@ async function initGrass() {
         r: rT,
         seed: [blinkT, txT, tyT, tT],
       } = firefly;
-      const cx = mixN(0.05, 0.5, xT) * grass1Canvas.width;
+      const cx = mixN(0, 0.5, xT) * grass1Canvas.width;
       const cy = (1 - mixN(0.2, 0.4, yT)) * grass1Canvas.height;
       const r =
         mixN(0.01, 0.0075, rT) *

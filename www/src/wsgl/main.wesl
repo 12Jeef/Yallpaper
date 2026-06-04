@@ -83,14 +83,14 @@ fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   var milky_way_3 = cloud(proj_coord + time_x25, vec2f(0.5, 0.5), 3.0) * 0.75 * pow(milky_way_mask / 2.0 + 0.5, 7.0);
   milky_way_3 = clamp(milky_way_3, 0.0, 2.0);
-  color = color + milky_way_3 * vec3f(1.0, mix(0.4, 0.8, milky_way_3), mix(0.25, 0.75, milky_way_3)) * 0.5;
+  color = color + milky_way_3 * mix(vec3f(0.8, 0.2, 0.5), vec3f(0.8, 1.0, 1.0), milky_way_3) * 0.5;
 
   let milky_way = min(2.0, milky_way_1 * 1.5 + milky_way_2 * 0.5);
 
   let stars_s = stars_seed(frag, 0.05);
 
   let stars_1 = stars(stars_s, 1.0, 15.0) * milky_way;
-  color = color + stars_1 * vec3f(1.0, mix(0.1, 0.8, stars_1), mix(0.0, 1.0, stars_1));
+  color = color + stars_1 * vec3f(1.0, mix(0.1, 0.8, stars_1), mix(0.5, 1.0, stars_1));
 
   let stars_2 = stars(stars_s, 2.0, 15.0) * pow(milky_way + 0.25, 10.0);
   color = color + stars_2 * vec3f(mix(0.25, 1.0, stars_2), 0.9, 1.0);
