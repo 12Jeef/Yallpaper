@@ -5,6 +5,8 @@ import wgsl from "./wsgl/main.wesl?static";
 
 // const cnsl = document.getElementById("console")!;
 
+const dpr = 1; // window.devicePixelRatio || 1;
+
 const possibleSkyCanvas = document.querySelector(
   "#app > canvas#sky",
 ) as HTMLCanvasElement | null;
@@ -25,7 +27,6 @@ const grassCanvas = possibleGrassCanvas;
 
 function initCanvas(canvas: HTMLCanvasElement, onResize?: () => void) {
   function resize() {
-    const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.floor(window.innerWidth * dpr);
     canvas.height = Math.floor(window.innerHeight * dpr);
     canvas.style.width = `${window.innerWidth}px`;
@@ -81,7 +82,7 @@ async function initSky() {
     primitive: { topology: "triangle-strip" },
   });
 
-  const uniformBufferSize = 16; // vec2 + float + padding
+  const uniformBufferSize = 16; // vec2 (resolution) + float (time) + float (dpr)
   const uniformBuffer = device.createBuffer({
     size: uniformBufferSize,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -98,9 +99,10 @@ async function initSky() {
   async function frame() {
     const t = (Date.now() - tStart) / 1e3;
 
-    f32[0] = skyCanvas.width;
-    f32[1] = skyCanvas.height;
+    f32[0] = skyCanvas.width * (2 / dpr);
+    f32[1] = skyCanvas.height * (2 / dpr);
     f32[2] = t;
+    f32[3] = dpr;
     device.queue.writeBuffer(uniformBuffer, 0, u8);
 
     const view = ctx.getCurrentTexture().createView();
@@ -192,13 +194,13 @@ async function initGrass() {
   //   });
   // }
 
-  const size = 75 * (window.devicePixelRatio || 1);
+  const size = 75 * dpr;
 
   function generateGrass() {
     grass.splice(0, grass.length);
     const hMin = grassCanvas.height * 0.05;
     const hMax = grassCanvas.height * 0.2;
-    const spacing = 30 * (window.devicePixelRatio || 1);
+    const spacing = 30 * dpr;
     let z = 0;
     for (
       let yShift = 0;

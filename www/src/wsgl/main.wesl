@@ -4,7 +4,7 @@ import lygia::generative::worley::worley3;
 struct Uniforms {
   resolution: vec2f,
   time: f32,
-  _pad: f32,
+  dpr: f32,
 };
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -69,7 +69,7 @@ fn cloud(coord: vec2f, scale: vec2f, edge: f32) -> f32 {
 fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   var color = vec3f(0.0, 0.0, 0.1);
 
-  let frag = vec2f(pos.x, pos.y);
+  let frag = vec2f(pos.x, pos.y) * (2.0 / uniforms.dpr);
   let proj_coord_data = project(frag);
   let proj_coord = proj_coord_data.xy;
   let theta_t = proj_coord_data.z;
@@ -88,16 +88,16 @@ fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 
   let milky_way = min(2.0, milky_way_1 * 1.5 + milky_way_2 * 0.5);
 
-  let stars_1 = stars(vec2f(pos.x, pos.y), 0.05, 1.0, 15.0) * milky_way;
+  let stars_1 = stars(vec2f(frag.x, frag.y), 0.05, 1.0, 15.0) * milky_way;
   color = color + stars_1 * vec3f(1.0, mix(0.1, 0.8, stars_1), mix(0.0, 1.0, stars_1));
 
-  let stars_2 = stars(vec2f(pos.x, pos.y), 0.05, 2.0, 15.0) * pow(milky_way + 0.25, 10.0);
+  let stars_2 = stars(vec2f(frag.x, frag.y), 0.05, 2.0, 15.0) * pow(milky_way + 0.25, 10.0);
   color = color + stars_2 * vec3f(mix(0.25, 1.0, stars_2), 0.9, 1.0);
 
   let milky_way_4 = cloud(proj_coord + vec2f(10.0, 0.0) * uniforms.time, vec2f(0.5, 0.25), 3.0) * pow(milky_way_mask / 2.0 + 0.75, 4.0);
   color = mix(color, mix(vec3f(0.05, 0.0, 0.2), vec3f(0.0, 0.0, 0.2), pow(clamp(milky_way_4 - 1.0, 0.0, 1.0), 3.0)), clamp(milky_way_4, 0.0, 1.0));
 
-  let gradient_y = pos.y / uniforms.resolution.y - pos.x / uniforms.resolution.x * 0.1 + 0.05;
+  let gradient_y = frag.y / uniforms.resolution.y - frag.x / uniforms.resolution.x * 0.1 + 0.05;
   color = color + vec3f(0.0, 0.15, 0.2) * clamp(1.0 - 1.5 * (1.0 - gradient_y), 0.0, 1.0);
   color = color + vec3f(0.05, 0.15, 0.2) * clamp(1.0 - 3.5 * (1.0 - gradient_y), 0.0, 1.0);
 
