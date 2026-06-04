@@ -20,5 +20,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
-  "exclude": ["src/glsl/lygia"]
+  "exclude": ["src/wsgl/lygia"]
 }

@@ -1,7 +1,7 @@
 /// <reference types="@webgpu/types" />
 
 import "./style.css";
-import wgsl from "./glsl/main.wesl?static";
+import wgsl from "./wsgl/main.wesl?static";
 
 const possibleCanvas = document.querySelector(
   "#app > canvas#bg",
@@ -52,7 +52,7 @@ async function initWebGPU() {
       entryPoint: "fs_main",
       targets: [{ format }],
     },
-    primitive: { topology: "triangle-strip" as GPUPrimitiveTopology },
+    primitive: { topology: "triangle-strip" },
   });
 
   const uniformBufferSize = 16; // vec2 + float + padding
@@ -76,10 +76,14 @@ async function initWebGPU() {
   new ResizeObserver(resize).observe(document.body);
 
   const tStart = performance.now();
+  let tLast = 0;
   function frame() {
     requestAnimationFrame(frame);
 
-    const t = (performance.now() - tStart) / 1000;
+    const t = (performance.now() - tStart) / 1e3;
+    if (t - tLast < 1 / 15) return;
+    tLast = t;
+
     const u8 = new ArrayBuffer(uniformBufferSize);
     const f32 = new Float32Array(u8);
     f32[0] = canvas.width;

@@ -9,6 +9,8 @@ struct Uniforms {
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
 
+const PI: f32 = 3.141592653589793;
+
 // FBM port matching lygia/generative/fbm.glsl defaults (4 octaves, amplitude 0.5, scale 2.0)
 fn fbm3(p_in: vec3f) -> f32 {
   var value: f32 = 0.0;
@@ -22,24 +24,16 @@ fn fbm3(p_in: vec3f) -> f32 {
   return value;
 }
 
-fn rotate(coord: vec2f, angle: f32) -> vec2f {
-  let s = sin(angle);
-  let c = cos(angle);
-  return vec2f(coord.x * c - coord.y * s, coord.x * s + coord.y * c);
-}
-
 fn project(coord: vec2f) -> vec3f {
   let origin = uniforms.resolution * vec2f(1.5, 3.5);
   let r = length(coord - origin);
   let theta = atan2(coord.y - origin.y, coord.x - origin.x);
   let theta_low = atan2(0.0 - origin.y, uniforms.resolution.x - origin.x);
   let theta_high = atan2(uniforms.resolution.y - origin.y, 0.0 - origin.x);
-  let theta_t = (theta - theta_low) / (theta_high - theta_low) + 0.1;
+  let theta_t = ((theta - theta_low) / (theta_high - theta_low) + 0.1 - 0.5) * (1.0 - 0.25 * r / length(uniforms.resolution * 0.5 - origin)) + 0.5;
   let y = theta_t * length(uniforms.resolution);
   return vec3f(r, y, theta_t);
 }
-
-const PI: f32 = 3.141592653589793;
 
 fn atan2(y: f32, x: f32) -> f32 {
   if (x > 0.0) {
@@ -69,6 +63,51 @@ fn stars(coord: vec2f, noise_scale: f32, size: f32, edge: f32) -> f32 {
 fn cloud(coord: vec2f, scale: vec2f, edge: f32) -> f32 {
   let noise_coord = coord / 1000.0 / scale;
   return pow(fbm3(vec3f(noise_coord.x, noise_coord.y, uniforms.time * 0.01)) * 0.5 + 0.5, edge);
+}
+
+fn grass_y(x: f32) -> f32 {
+  let t = x / uniforms.resolution.x;
+  let h = (0.5 * (sin(2.09439510239 + (-1.57079632679 - 2.09439510239) * t) + 1.0) * 0.15 + 0.05) * uniforms.resolution.y;
+  let y = uniforms.resolution.y - h;
+  return y;
+}
+
+fn grass_blade(coord: vec2f, x: f32) -> f32 {
+  let y = grass_y(x);
+  let origin = vec2f(x, y + 10.0);
+  let scale = 0.5 * fbm3(vec3f(x / 100.0, 0.0, 0.0)) + 0.5;
+  let size = mix(0.0, 150.0, scale);
+  let w = mix(25.0, 25.0, scale);
+  let angle_t = fbm3(vec3f(x / 100.0 + 0.1 * uniforms.time, 0.0, 0.0)) * 0.5 + 0.5;
+  let angle = mix(0.0872664626, 1.0471975512, angle_t);
+  let s = sin(angle);
+  let c = cos(angle);
+  let end = origin - vec2f(s, c) * size;
+  let t = (coord.y - origin.y) / (end.y - origin.y);
+  let left = mix(origin.x - 0.5 * w, end.x, t);
+  let right = mix(origin.x + 0.5 * w, end.x, t);
+  return 1.0 - (step(0.0, t) * step(t, 1.0) * step(left, coord.x) * step(coord.x, right));
+}
+
+const spacing = 15.0;
+
+fn grass_blades(coord: vec2f) -> f32 {
+  let nearest_x = round(coord.x / spacing) * spacing;
+  return
+    grass_blade(coord, nearest_x) *
+    grass_blade(coord, nearest_x - spacing) *
+    grass_blade(coord, nearest_x + spacing) *
+    grass_blade(coord, nearest_x - spacing * 2.0) *
+    grass_blade(coord, nearest_x + spacing * 2.0);
+}
+
+fn grass(color: vec3f, coord: vec2f) -> vec3f {
+  let y = grass_y(coord.x);
+  let dy = coord.y - y;
+  let grass_mask = grass_blades(coord);
+  let mask = step(0.0, -dy) * grass_mask;
+  let grass_color = mix(vec3f(0.0, 0.0, 0.1), vec3f(0.075, 0.05, 0.2), (coord.y - 0.8 * uniforms.resolution.y) / (0.2 * uniforms.resolution.y));
+  return mix(grass_color, color, mask);
 }
 
 @toy @fragment
@@ -103,8 +142,11 @@ fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let milky_way_4 = cloud(proj_coord + vec2f(10.0, 0.0) * uniforms.time, vec2f(0.5, 0.25), 3.0) * pow(milky_way_mask / 2.0 + 0.75, 4.0);
   color = mix(color, mix(vec3f(0.05, 0.0, 0.2), vec3f(0.0, 0.0, 0.2), pow(clamp(milky_way_4 - 1.0, 0.0, 1.0), 3.0)), clamp(milky_way_4, 0.0, 1.0));
 
-  color = color + vec3f(0.0, 0.15, 0.2) * clamp(1.0 - 1.5 * (1.0 - pos.y / uniforms.resolution.y), 0.0, 1.0);
-  color = color + vec3f(0.05, 0.15, 0.2) * clamp(1.0 - 3.5 * (1.0 - pos.y / uniforms.resolution.y), 0.0, 1.0);
+  let gradient_y = pos.y / uniforms.resolution.y - pos.x / uniforms.resolution.x * 0.1;
+  color = color + vec3f(0.0, 0.15, 0.2) * clamp(1.0 - 1.5 * (1.0 - gradient_y), 0.0, 1.0);
+  color = color + vec3f(0.05, 0.15, 0.2) * clamp(1.0 - 3.5 * (1.0 - gradient_y), 0.0, 1.0);
+
+  color = grass(color, frag);
 
   return vec4f(color, 1.0);
 }
