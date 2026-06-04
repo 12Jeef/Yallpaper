@@ -17,6 +17,28 @@ body,
   left: 0;
 }
 
+#app > div#blob {
+  position: absolute;
+  top: 70vh;
+  left: 25vw;
+}
+#app > div#blob > img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+#app > div#blob > img#layer1 {
+  opacity: 0.35;
+}
+#app > div#blob > img#layer2 {
+  opacity: 0.75;
+}
+#app > div#blob > img#layer3 {
+  opacity: 1;
+  transform-origin: 50% 70%;
+}
+
 #app > div#grass-blur {
   position: absolute;
   bottom: 0;

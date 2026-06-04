@@ -29,7 +29,7 @@ fn project(coord: vec2f) -> vec3f {
   let theta_low = atan2(-origin.y, uniforms.resolution.x - origin.x);
   let theta_high = atan2(uniforms.resolution.y - origin.y, -origin.x);
   let theta_range = theta_high - theta_low;
-  let warp_mult = 1.25 - 1.5 * (r / length(uniforms.resolution * 0.5 - origin) - 0.75);
+  let warp_mult = 1.0 - 1.2 * (r / length(uniforms.resolution * 0.5 - origin) - 0.75);
   let warp_add = 0.02 - 0.2 * (r / length(uniforms.resolution * 0.5 - origin) - 1.0);
   let theta_t = ((theta - theta_low) / theta_range + 0.1 - 0.5) * warp_mult + 0.5 + warp_add;
   let y = theta_t * length(uniforms.resolution);

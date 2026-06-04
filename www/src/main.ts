@@ -16,14 +16,41 @@ if (!(possibleSkyCanvas instanceof HTMLCanvasElement)) {
 }
 const skyCanvas = possibleSkyCanvas;
 
-const possibleGrassCanvas = document.querySelector(
-  "#app > canvas#grass",
+const possibleGrass1Canvas = document.querySelector(
+  "#app > canvas#grass1",
 ) as HTMLCanvasElement | null;
-if (!(possibleGrassCanvas instanceof HTMLCanvasElement)) {
-  document.body.innerHTML = "Canvas Grass: Element not found";
-  throw new Error("Canvas Grass: Element not found");
+if (!(possibleGrass1Canvas instanceof HTMLCanvasElement)) {
+  document.body.innerHTML = "Canvas Grass1: Element not found";
+  throw new Error("Canvas Grass1: Element not found");
 }
-const grassCanvas = possibleGrassCanvas;
+const grass1Canvas = possibleGrass1Canvas;
+
+const possibleGrass2Canvas = document.querySelector(
+  "#app > canvas#grass2",
+) as HTMLCanvasElement | null;
+if (!(possibleGrass2Canvas instanceof HTMLCanvasElement)) {
+  document.body.innerHTML = "Canvas Grass2: Element not found";
+  throw new Error("Canvas Grass2: Element not found");
+}
+const grass2Canvas = possibleGrass2Canvas;
+
+const possibleBlob = document.querySelector(
+  "#app > div#blob",
+) as HTMLDivElement | null;
+if (!(possibleBlob instanceof HTMLDivElement)) {
+  document.body.innerHTML = "Div Blob: Element not found";
+  throw new Error("Div Blob: Element not found");
+}
+const blob = possibleBlob;
+
+const possibleBlobLayer3 = document.querySelector(
+  "#app > div#blob > img#layer3",
+) as HTMLImageElement | null;
+if (!(possibleBlobLayer3 instanceof HTMLImageElement)) {
+  document.body.innerHTML = "Img Blob Layer3: Element not found";
+  throw new Error("Img Blob Layer3: Element not found");
+}
+const blobLayer3 = possibleBlobLayer3;
 
 function initCanvas(canvas: HTMLCanvasElement, onResize?: () => void) {
   function resize() {
@@ -133,9 +160,12 @@ async function initSky() {
 }
 
 async function initGrass() {
-  const possibleCtx = grassCanvas.getContext("2d");
-  if (!possibleCtx) throw new Error("Canvas Grass: Failed to get 2D context");
-  const ctx = possibleCtx;
+  const possibleCtx1 = grass1Canvas.getContext("2d");
+  if (!possibleCtx1) throw new Error("Canvas Grass1: Failed to get 2D context");
+  const ctx1 = possibleCtx1;
+  const possibleCtx2 = grass2Canvas.getContext("2d");
+  if (!possibleCtx2) throw new Error("Canvas Grass2: Failed to get 2D context");
+  const ctx2 = possibleCtx2;
 
   function sigpow(x: number, v: number): number {
     return Math.sign(x) * Math.pow(Math.abs(x), v);
@@ -209,8 +239,8 @@ async function initGrass() {
 
   function generateGrass() {
     grass.splice(0, grass.length);
-    const hMin = grassCanvas.height * 0.05;
-    const hMax = grassCanvas.height * 0.2;
+    const hMin = grass1Canvas.height * 0.05;
+    const hMax = grass1Canvas.height * 0.2;
     const spacing = 30 * dpr;
     let z = 0;
     for (
@@ -221,16 +251,16 @@ async function initGrass() {
       z++;
       for (
         let x = -(Math.random() + 2) * spacing;
-        x < grassCanvas.width + 2 * spacing;
+        x < grass1Canvas.width + 2 * spacing;
         x += spacing * mixN(0.9, 1.1, Math.random())
       ) {
-        const xT = x / grassCanvas.width;
+        const xT = x / grass1Canvas.width;
         const yT =
           0.5 +
           0.5 * Math.sin(2.0943951024 + (-1.5707963268 - 2.0943951024) * xT);
         const h = mixN(hMin, hMax, yT);
         const y =
-          grassCanvas.height - h + yShift + 30 * mixN(-1, 1, Math.random());
+          grass1Canvas.height - h + yShift + 30 * mixN(-1, 1, Math.random());
         grass.push({
           pos: [x, y, z],
           size: size * mixN(0.75, 1.25, Math.random()),
@@ -241,22 +271,25 @@ async function initGrass() {
     zMax = z;
   }
 
-  initCanvas(grassCanvas, () => {
+  initCanvas(grass1Canvas, () => {
     generateGrass();
   });
+  initCanvas(grass2Canvas);
 
   const tStart = Date.now();
   function frame() {
     const t = (Date.now() - tStart) / 1e3;
 
-    ctx.clearRect(0, 0, grassCanvas.width, grassCanvas.height);
+    ctx1.clearRect(0, 0, grass1Canvas.width, grass1Canvas.height);
+    ctx2.clearRect(0, 0, grass1Canvas.width, grass1Canvas.height);
     for (const g of grass) {
       const {
         pos: [x, y, z],
         size,
         seed,
       } = g;
-      const xT = x / grassCanvas.width;
+      const ctx = z / zMax > 0.5 ? ctx2 : ctx1;
+      const xT = x / grass1Canvas.width;
       const theta =
         mixN(15, 45, 0.5 + 0.5 * Math.sin(5 * xT + 2 * seed + 0.5 * t)) *
         (Math.PI / 180);
@@ -286,13 +319,13 @@ async function initGrass() {
       );
       ctx.fillStyle = gr;
       ctx.beginPath();
-      ctx.moveTo(x - size * 0.5, grassCanvas.height);
+      ctx.moveTo(x - size * 0.5, grass1Canvas.height);
       ctx.lineTo(x - size * 0.5, y);
       ctx.lineTo(x - size * 0.25, y);
       ctx.lineTo(x0, y0);
       ctx.lineTo(x + size * 0.25, y);
       ctx.lineTo(x + size * 0.5, y);
-      ctx.lineTo(x + size * 0.5, grassCanvas.height);
+      ctx.lineTo(x + size * 0.5, grass1Canvas.height);
       ctx.closePath();
       ctx.fill();
     }
@@ -303,11 +336,11 @@ async function initGrass() {
         r: rT,
         seed: [blinkT, txT, tyT, tT],
       } = firefly;
-      const cx = mixN(0.05, 0.5, xT) * grassCanvas.width;
-      const cy = (1 - mixN(0.2, 0.4, yT)) * grassCanvas.height;
+      const cx = mixN(0.05, 0.5, xT) * grass1Canvas.width;
+      const cy = (1 - mixN(0.2, 0.4, yT)) * grass1Canvas.height;
       const r =
         mixN(0.01, 0.0075, rT) *
-        Math.hypot(grassCanvas.width, grassCanvas.height);
+        Math.hypot(grass1Canvas.width, grass1Canvas.height);
       const blink = Math.pow(
         0.5 + 0.5 * Math.sin(blinkT * 2 * Math.PI + mixN(1.5, 3.5, blinkT) * t),
         2,
@@ -317,27 +350,30 @@ async function initGrass() {
       const ty = tBase + mixN(0.5, 5, tyT) * t;
       const x = cx + Math.cos(tx) * r;
       const y = cy + Math.sin(ty) * r;
-      ctx.globalAlpha = blink;
-      ctx.fillStyle = green;
-      ctx.beginPath();
-      ctx.arc(x, y, mixN(1.5, 2.5, blink) * dpr, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      ctx.arc(x, y, mixN(0, 1.5, blink) * dpr, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.globalAlpha = blink * 0.25;
+      ctx2.globalAlpha = blink;
+      ctx2.fillStyle = green;
+      ctx2.beginPath();
+      ctx2.arc(x, y, mixN(1.5, 2.5, blink) * dpr, 0, 2 * Math.PI);
+      ctx2.fill();
+      ctx2.fillStyle = "#ffffff";
+      ctx2.beginPath();
+      ctx2.arc(x, y, mixN(0, 1.5, blink) * dpr, 0, 2 * Math.PI);
+      ctx2.fill();
+      ctx2.globalAlpha = blink * 0.25;
       const bloom = mixN(0, 30, blink) * dpr;
-      const gr = ctx.createRadialGradient(x, y, 0, x, y, bloom);
+      const gr = ctx2.createRadialGradient(x, y, 0, x, y, bloom);
       gr.addColorStop(0, green);
       gr.addColorStop(0.5, green + "44");
       gr.addColorStop(1, green + "00");
-      ctx.fillStyle = gr;
-      ctx.beginPath();
-      ctx.arc(x, y, bloom, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.globalAlpha = 1;
+      ctx2.fillStyle = gr;
+      ctx2.beginPath();
+      ctx2.arc(x, y, bloom, 0, 2 * Math.PI);
+      ctx2.fill();
+      ctx2.globalAlpha = 1;
     }
+
+    blob.style.transform = `translate(-50%, -50%) translateY(${5 * Math.sin(1 + 0.5 * t)}px)`;
+    blobLayer3.style.transform = `translate(-50%, -50%) rotate(${mixN(-5, 0, 0.5 + 0.5 * Math.sin(1 * t))}deg)`;
   }
   (async () => {
     while (true) {
