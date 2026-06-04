@@ -3,6 +3,8 @@
 import "./style.css";
 import wgsl from "./wsgl/main.wesl?static";
 
+// const cnsl = document.getElementById("console")!;
+
 const possibleSkyCanvas = document.querySelector(
   "#app > canvas#sky",
 ) as HTMLCanvasElement | null;
@@ -89,24 +91,20 @@ async function initSky() {
     entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
   });
 
-  const tStart = performance.now();
-  let tLast = 0;
-  function frame() {
-    requestAnimationFrame(frame);
+  const u8 = new ArrayBuffer(uniformBufferSize);
+  const f32 = new Float32Array(u8);
 
-    const t = (performance.now() - tStart) / 1e3;
-    if (t - tLast < 1 / 15) return;
-    tLast = t;
+  const tStart = Date.now();
+  async function frame() {
+    const t = (Date.now() - tStart) / 1e3;
 
-    const u8 = new ArrayBuffer(uniformBufferSize);
-    const f32 = new Float32Array(u8);
     f32[0] = skyCanvas.width;
     f32[1] = skyCanvas.height;
     f32[2] = t;
     device.queue.writeBuffer(uniformBuffer, 0, u8);
 
-    const encoder = device.createCommandEncoder();
     const view = ctx.getCurrentTexture().createView();
+    const encoder = device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
@@ -122,8 +120,14 @@ async function initSky() {
     pass.draw(4, 1, 0, 0);
     pass.end();
     device.queue.submit([encoder.finish()]);
+    await device.queue.onSubmittedWorkDone();
   }
-  requestAnimationFrame(frame);
+  (async () => {
+    while (true) {
+      await new Promise((res) => setTimeout(res, (1 / 15) * 1e3));
+      frame();
+    }
+  })();
 }
 
 async function initGrass() {
@@ -228,14 +232,9 @@ async function initGrass() {
     generateGrass();
   });
 
-  const tStart = performance.now();
-  let tLast = 0;
+  const tStart = Date.now();
   function frame() {
-    requestAnimationFrame(frame);
-
-    const t = (performance.now() - tStart) / 1e3;
-    if (t - tLast < 1 / 15) return;
-    tLast = t;
+    const t = (Date.now() - tStart) / 1e3;
 
     ctx.clearRect(0, 0, grassCanvas.width, grassCanvas.height);
     for (const g of grass) {
@@ -256,8 +255,8 @@ async function initGrass() {
         1,
         rgb(
           mixVec3(
-            mixVec3([0.075, 0.05, 0.2], [0, 0, 0.1], zT),
-            [0, 0, 0.15],
+            mixVec3([0.075, 0.05, 0.3], [0, 0, 0.1], zT),
+            [0, 0, 0.3],
             xT * 0.5,
           ),
         ),
@@ -293,7 +292,12 @@ async function initGrass() {
     //   } = firefly;
     // }
   }
-  requestAnimationFrame(frame);
+  (async () => {
+    while (true) {
+      await new Promise((res) => setTimeout(res, (1 / 15) * 1e3));
+      frame();
+    }
+  })();
 }
 
 async function init() {

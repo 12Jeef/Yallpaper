@@ -26,3 +26,10 @@ body,
   mask: linear-gradient(-90deg, black, transparent);
   backdrop-filter: blur(2px);
 }
+
+#console {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #fff;
+}
