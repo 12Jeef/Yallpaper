@@ -29,8 +29,9 @@ fn project(coord: vec2f) -> vec3f {
   let theta_low = atan2(-origin.y, uniforms.resolution.x - origin.x);
   let theta_high = atan2(uniforms.resolution.y - origin.y, -origin.x);
   let theta_range = theta_high - theta_low;
-  let warp = 1.0 - 0.25 * r / length(uniforms.resolution * 0.5 - origin);
-  let theta_t = ((theta - theta_low) / theta_range + 0.1 - 0.5) * warp + 0.5;
+  let warp_mult = 1.25 - 1.5 * (r / length(uniforms.resolution * 0.5 - origin) - 0.75);
+  let warp_add = 0.02 - 0.2 * (r / length(uniforms.resolution * 0.5 - origin) - 1.0);
+  let theta_t = ((theta - theta_low) / theta_range + 0.1 - 0.5) * warp_mult + 0.5 + warp_add;
   let y = theta_t * length(uniforms.resolution);
   return vec3f(r, y, theta_t);
 }
@@ -98,8 +99,8 @@ fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   color = mix(color, mix(vec3f(0.05, 0.0, 0.2), vec3f(0.0, 0.0, 0.2), pow(clamp(milky_way_4 - 1.0, 0.0, 1.0), 3.0)), clamp(milky_way_4, 0.0, 1.0));
 
   let gradient_y = frag.y / uniforms.resolution.y - frag.x / uniforms.resolution.x * 0.1 + 0.05;
-  color = color + vec3f(0.0, 0.15, 0.2) * clamp(1.0 - 1.5 * (1.0 - gradient_y), 0.0, 1.0);
-  color = color + vec3f(0.05, 0.15, 0.2) * clamp(1.0 - 3.5 * (1.0 - gradient_y), 0.0, 1.0);
+  color = color + vec3f(0.1, 0.15, 0.25) * clamp(1.0 - 1.5 * (1.0 - gradient_y), 0.0, 1.0);
+  color = color + vec3f(0.2, 0.25, 0.5) * clamp(1.0 - 3.5 * (1.0 - gradient_y), 0.0, 1.0);
 
   return vec4f(color, 1.0);
 }
