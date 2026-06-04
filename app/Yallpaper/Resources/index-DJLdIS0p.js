@@ -93,27 +93,6 @@ fn grass_blade(coord: vec2f, x: f32) -> f32 {
   return 1.0 - (step(0.0, t) * step(t, 1.0) * step(left, coord.x) * step(coord.x, right));
 }
 
-const spacing = 15.0;
-
-fn grass_blades(coord: vec2f) -> f32 {
-  let nearest_x = round(coord.x / spacing) * spacing;
-  return
-    grass_blade(coord, nearest_x) *
-    grass_blade(coord, nearest_x - spacing) *
-    grass_blade(coord, nearest_x + spacing) *
-    grass_blade(coord, nearest_x - spacing * 2.0) *
-    grass_blade(coord, nearest_x + spacing * 2.0);
-}
-
-fn grass(color: vec3f, coord: vec2f) -> vec3f {
-  let y = grass_y(coord.x);
-  let dy = coord.y - y;
-  let grass_mask = grass_blades(coord);
-  let mask = step(0.0, -dy) * grass_mask;
-  let grass_color = mix(vec3f(0.0, 0.0, 0.1), vec3f(0.075, 0.05, 0.2), (coord.y - 0.8 * uniforms.resolution.y) / (0.2 * uniforms.resolution.y));
-  return mix(grass_color, color, mask);
-}
-
 @fragment fn fs_main(@builtin(position)pos: vec4f) -> @location(0) vec4f {
   var color = vec3f(0.0, 0.0, 0.1);
 
@@ -148,8 +127,6 @@ fn grass(color: vec3f, coord: vec2f) -> vec3f {
   let gradient_y = pos.y / uniforms.resolution.y - pos.x / uniforms.resolution.x * 0.1;
   color = color + vec3f(0.0, 0.15, 0.2) * clamp(1.0 - 1.5 * (1.0 - gradient_y), 0.0, 1.0);
   color = color + vec3f(0.05, 0.15, 0.2) * clamp(1.0 - 3.5 * (1.0 - gradient_y), 0.0, 1.0);
-
-  color = grass(color, frag);
 
   return vec4f(color, 1.0);
 }
