@@ -137,9 +137,13 @@ async function initGrass() {
   if (!possibleCtx) throw new Error("Canvas Grass: Failed to get 2D context");
   const ctx = possibleCtx;
 
-  // type vec2 = [number, number];
+  function sigpow(x: number, v: number): number {
+    return Math.sign(x) * Math.pow(Math.abs(x), v);
+  }
+
+  type vec2 = [number, number];
   type vec3 = [number, number, number];
-  // type vec4 = [number, number, number, number];
+  type vec4 = [number, number, number, number];
 
   // function nToVec2(v: number): vec2 {
   //   return [v, v];
@@ -176,23 +180,30 @@ async function initGrass() {
     seed: number;
     size: number;
   };
-  // type Firefly = {
-  //   pos: vec2;
-  //   r: number;
-  //   seed: vec4;
-  // };
+  type Firefly = {
+    pos: vec2;
+    r: number;
+    seed: vec4;
+  };
 
   const grass: Grass[] = [];
   let zMax = 0;
 
-  // const fireflies: Firefly[] = [];
-  // for (let i = 0; i < 3; i++) {
-  //   fireflies.push({
-  //     pos: [Math.random(), Math.random()],
-  //     r: Math.random(),
-  //     seed: [Math.random(), Math.random(), Math.random(), Math.random()],
-  //   });
-  // }
+  const fireflies: Firefly[] = [];
+  for (let i = 0; i < 8; i++) {
+    fireflies.push({
+      pos: [sigpow(Math.random() - 0.25, 1.5) + 0.25, Math.random()],
+      r: Math.random(),
+      seed: [Math.random(), Math.random(), Math.random(), Math.random()],
+    });
+  }
+  for (let i = 0; i < 2; i++) {
+    fireflies.push({
+      pos: [mixN(1.5, 2.5, Math.random()), mixN(-0.75, 0.25, Math.random())],
+      r: Math.random(),
+      seed: [Math.random(), Math.random(), Math.random(), Math.random()],
+    });
+  }
 
   const size = 75 * dpr;
 
@@ -285,18 +296,52 @@ async function initGrass() {
       ctx.closePath();
       ctx.fill();
     }
-    // ctx.fillStyle = "";
-    // for (const firefly of fireflies) {
-    //   const {
-    //     pos: [xT, yT],
-    //     r: rT,
-    //     seed: [blinkT, txT, tyT, tT],
-    //   } = firefly;
-    // }
+    const green = "#1cff77";
+    for (const firefly of fireflies) {
+      const {
+        pos: [xT, yT],
+        r: rT,
+        seed: [blinkT, txT, tyT, tT],
+      } = firefly;
+      const cx = mixN(0.05, 0.5, xT) * grassCanvas.width;
+      const cy = (1 - mixN(0.2, 0.4, yT)) * grassCanvas.height;
+      const r =
+        mixN(0.01, 0.0075, rT) *
+        Math.hypot(grassCanvas.width, grassCanvas.height);
+      const blink = Math.pow(
+        0.5 + 0.5 * Math.sin(blinkT * 2 * Math.PI + mixN(1.5, 3.5, blinkT) * t),
+        2,
+      );
+      const tBase = tT * 2 * Math.PI;
+      const tx = tBase + mixN(0.5, 5, txT) * t;
+      const ty = tBase + mixN(0.5, 5, tyT) * t;
+      const x = cx + Math.cos(tx) * r;
+      const y = cy + Math.sin(ty) * r;
+      ctx.globalAlpha = blink;
+      ctx.fillStyle = green;
+      ctx.beginPath();
+      ctx.arc(x, y, mixN(1.5, 2.5, blink) * dpr, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(x, y, mixN(0, 1.5, blink) * dpr, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.globalAlpha = blink * 0.25;
+      const bloom = mixN(0, 30, blink) * dpr;
+      const gr = ctx.createRadialGradient(x, y, 0, x, y, bloom);
+      gr.addColorStop(0, green);
+      gr.addColorStop(0.5, green + "44");
+      gr.addColorStop(1, green + "00");
+      ctx.fillStyle = gr;
+      ctx.beginPath();
+      ctx.arc(x, y, bloom, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
   }
   (async () => {
     while (true) {
-      await new Promise((res) => setTimeout(res, (1 / 15) * 1e3));
+      await new Promise((res) => setTimeout(res, (1 / 30) * 1e3));
       frame();
     }
   })();

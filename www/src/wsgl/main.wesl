@@ -16,7 +16,7 @@ fn fbm3(p_in: vec3f) -> f32 {
   var pos: vec3f = p_in;
   for (var i: i32 = 0; i < 3; i = i + 1) {
     value = value + amplitude * snoise3(pos);
-    pos = pos * 2.0;
+    pos = pos * 2.5;
     amplitude = amplitude * 0.5;
   }
   return value;
@@ -37,8 +37,9 @@ fn project(coord: vec2f) -> vec3f {
 
 fn stars_seed(coord: vec2f, noise_scale: f32) -> vec2f {
   let time_scale = uniforms.time * 0.01;
-  let size_coord = coord / 3000.0 / noise_scale;
-  let points_coord = coord / 500.0 / noise_scale;
+  let shifted_coord = coord - vec2f(1.0, 2.5) * uniforms.time;
+  let size_coord = shifted_coord / 3000.0 / noise_scale;
+  let points_coord = shifted_coord / 500.0 / noise_scale;
 
   let star_size = fbm3(vec3f(size_coord.x, size_coord.y, time_scale));
   let star_points = worley3(vec3f(points_coord.x, points_coord.y, time_scale));
