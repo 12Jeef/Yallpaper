@@ -1,9 +1,10 @@
-// vite.config.js
+// vite.config.ts
 import { defineConfig } from "vite";
-import glsl from "vite-plugin-glsl";
+import { staticBuildExtension } from "wesl-plugin";
+import viteWesl from "wesl-plugin/vite";
 
 export default defineConfig({
-  plugins: [glsl()],
+  plugins: [viteWesl({ extensions: [staticBuildExtension] })],
   build: {
     assetsDir: ".",
   },

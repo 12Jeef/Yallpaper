@@ -1,82 +1,119 @@
+/// <reference types="@webgpu/types" />
+
 import "./style.css";
-import vertexShaderSource from "./glsl/main.vert";
-import fragmentShaderSource from "./glsl/main.frag";
+import wgsl from "./glsl/main.wesl?static";
 
-const canvasBg = document.querySelector("#app > canvas#bg");
-if (!(canvasBg instanceof HTMLCanvasElement)) {
-  document.body.innerHTML = "Canvas (BG) element not found";
-  throw new Error("Canvas (BG) element not found");
+const possibleCanvas = document.querySelector(
+  "#app > canvas#bg",
+) as HTMLCanvasElement | null;
+if (!(possibleCanvas instanceof HTMLCanvasElement)) {
+  document.body.innerHTML = "Canvas BG: Element not found";
+  throw new Error("Canvas BG: Element not found");
 }
-const gl = canvasBg.getContext("webgl");
-if (!gl) {
-  document.body.innerHTML = "Failed to get canvas (BG) context";
-  throw new Error("Failed to get canvas (BG) context");
-}
+const canvas = possibleCanvas;
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) {
-    throw new Error("Failed to create shader");
+async function initWebGPU() {
+  const adapter = await navigator.gpu.requestAdapter();
+  if (!adapter) throw new Error("Canvas BG: Failed to request GPU adapter");
+  const device = await adapter.requestDevice();
+
+  const possibleCtx = canvas.getContext("webgpu");
+  if (!possibleCtx) throw new Error("Canvas BG: Failed to get WebGPU context");
+  const ctx = possibleCtx;
+  const format = navigator.gpu.getPreferredCanvasFormat();
+  ctx.configure({ device, format, alphaMode: "opaque" });
+
+  const fragModule = device.createShaderModule({ code: wgsl });
+  const vsCode = `@vertex fn vs_main(@builtin(vertex_index) idx: u32) -> @builtin(position) vec4f {
+    var pos = array<vec2f, 4>(vec2f(-1.0,-1.0), vec2f(1.0,-1.0), vec2f(-1.0,1.0), vec2f(1.0,1.0));
+    let p = pos[idx];
+    return vec4f(p, 0.0, 1.0);
+  }`;
+  const vsModule = device.createShaderModule({ code: vsCode });
+
+  const bindGroupLayout = device.createBindGroupLayout({
+    entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.FRAGMENT,
+        buffer: { type: "uniform" },
+      },
+    ],
+  });
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [bindGroupLayout],
+  });
+
+  const pipeline = device.createRenderPipeline({
+    layout: pipelineLayout,
+    vertex: { module: vsModule, entryPoint: "vs_main" },
+    fragment: {
+      module: fragModule,
+      entryPoint: "fs_main",
+      targets: [{ format }],
+    },
+    primitive: { topology: "triangle-strip" as GPUPrimitiveTopology },
+  });
+
+  const uniformBufferSize = 16; // vec2 + float + padding
+  const uniformBuffer = device.createBuffer({
+    size: uniformBufferSize,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
+  const bindGroup = device.createBindGroup({
+    layout: bindGroupLayout,
+    entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+  });
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.height = `${window.innerHeight}px`;
   }
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    document.body.innerHTML =
-      "Failed to compile shader: " + gl.getShaderInfoLog(shader);
-    throw new Error("Failed to compile shader" + gl.getShaderInfoLog(shader));
+  resize();
+  new ResizeObserver(resize).observe(document.body);
+
+  const tStart = performance.now();
+  function frame() {
+    requestAnimationFrame(frame);
+
+    const t = (performance.now() - tStart) / 1000;
+    const u8 = new ArrayBuffer(uniformBufferSize);
+    const f32 = new Float32Array(u8);
+    f32[0] = canvas.width;
+    f32[1] = canvas.height;
+    f32[2] = t;
+    device.queue.writeBuffer(uniformBuffer, 0, u8);
+
+    const encoder = device.createCommandEncoder();
+    const view = ctx.getCurrentTexture().createView();
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view,
+          loadOp: "clear",
+          clearValue: { r: 0, g: 0, b: 0, a: 1 },
+          storeOp: "store",
+        },
+      ],
+    });
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, bindGroup);
+    pass.draw(4, 1, 0, 0);
+    pass.end();
+    device.queue.submit([encoder.finish()]);
   }
-  return shader;
+  requestAnimationFrame(frame);
 }
 
-const vs = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-const fs = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+async function init() {
+  try {
+    await initWebGPU();
+  } catch (err) {
+    document.body.innerHTML = `Canvas BG: WebGPU initialization failed: ${err instanceof Error ? err.message : String(err)}`;
+  }
+}
 
-const program = gl.createProgram();
-gl.attachShader(program, vs);
-gl.attachShader(program, fs);
-gl.linkProgram(program);
-
-gl.useProgram(program);
-
-const vertices = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
-
-const buffer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
-
-const positionLoc = gl.getAttribLocation(program, "u_position");
-gl.enableVertexAttribArray(positionLoc);
-gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
-
-const timeLoc = gl.getUniformLocation(program, "u_time");
-const resolutionLoc = gl.getUniformLocation(program, "u_resolution");
-
-const tStart = Date.now() / 1e3;
-const render = () => {
-  const t = Date.now() / 1e3 - tStart;
-
-  gl.viewport(0, 0, canvasBg.width, canvasBg.height);
-
-  gl.uniform1f(timeLoc, t);
-  gl.uniform2f(resolutionLoc, canvasBg.width, canvasBg.height);
-
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-};
-const update = () => {
-  window.requestAnimationFrame(update);
-  render();
-};
-update();
-
-const onResize = () => {
-  canvasBg.style.width = `${window.innerWidth}px`;
-  canvasBg.style.height = `${window.innerHeight}px`;
-  canvasBg.width = window.innerWidth * window.devicePixelRatio;
-  canvasBg.height = window.innerHeight * window.devicePixelRatio;
-  render();
-};
-onResize();
-const observer = new ResizeObserver(() => {
-  onResize();
-});
-observer.observe(document.body);
+init();
