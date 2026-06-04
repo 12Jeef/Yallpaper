@@ -27,6 +27,7 @@ body,
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  filter: contrast(1.2) hue-rotate(5deg);
 }
 #app > div#blob > img#layer1 {
   opacity: 0.35;
