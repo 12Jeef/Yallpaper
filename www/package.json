@@ -9,8 +9,11 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@webgpu/types": "^0.1.69",
+    "lygia": "^1.4.1",
     "typescript": "~6.0.2",
     "vite": "^8.0.14",
-    "vite-plugin-glsl": "^1.6.0"
+    "wesl": "^0.7.27",
+    "wesl-plugin": "^0.6.75"
   }
 }

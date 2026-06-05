@@ -12,13 +12,47 @@ body,
   display: block;
   margin: 0;
   padding: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
-#app > img {
+#app > div#blob {
+  position: absolute;
+  top: 70vh;
+  left: 25vw;
+}
+#app > div#blob > img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  filter: contrast(1.2) hue-rotate(5deg);
+}
+#app > div#blob > img#layer1 {
+  opacity: 0.35;
+}
+#app > div#blob > img#layer2 {
+  opacity: 0.75;
+}
+#app > div#blob > img#layer3 {
+  opacity: 1;
+  transform-origin: 50% 70%;
+}
+
+#app > div#grass-blur {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 100%;
-  transform: scaleY(0.5);
-  transform-origin: bottom left;
+  right: 0;
+  height: 50vh;
+  mask: linear-gradient(-90deg, black, transparent);
+  backdrop-filter: blur(2px);
+}
+
+#console {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #fff;
 }
