@@ -15,6 +15,10 @@ Yallpaper is a simple, open-source app to have an animated wallpaper on MacOS. I
 
 - Swift app running built-in WebKit
 - High-performance WebGPU/HTML/TS
+- Static wallpaper for lock screen
+
+> [!WARNING]
+> This app is built for MacOS only! To make it so that the wallpaper applies on all desktops/spaces, go to System Settings → Wallpaper → Show on all Spaces, and toggle that on. Otherwise, due to API limitations, I am unable to set the same PNG across all desktops/spaces. Sadly, there is no exposed API for a permanently animated wallpaper.
 
 ## Requirements
 - XCode ([Install](https://developer.apple.com/xcode/))

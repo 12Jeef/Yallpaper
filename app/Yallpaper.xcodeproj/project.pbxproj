@@ -11,8 +11,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		00936D062FCD374600DFC6E0 /* Yallpaper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Yallpaper.app; path = /Users/jeffrey/projects/Yallpaper/app/build/Debug/Yallpaper.app; sourceTree = "<absolute>"; };
 		00936D1F2FCDE8DD00DFC6E0 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		00936E8A2FD4AA9E00DFC6E0 /* Yallpaper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Yallpaper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -53,6 +53,7 @@
 			children = (
 				00936D1E2FCDE8DD00DFC6E0 /* Frameworks */,
 				00936D352FCE191400DFC6E0 /* Yallpaper */,
+				00936E8A2FD4AA9E00DFC6E0 /* Yallpaper.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -86,7 +87,7 @@
 			packageProductDependencies = (
 			);
 			productName = Yallpaper;
-			productReference = 00936D062FCD374600DFC6E0 /* Yallpaper.app */;
+			productReference = 00936E8A2FD4AA9E00DFC6E0 /* Yallpaper.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -277,7 +278,6 @@
 				INFOPLIST_FILE = Yallpaper/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Yallpaper;
 				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Yallpaper needs to set your wallpaper across all spaces";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -311,7 +311,6 @@
 				INFOPLIST_FILE = Yallpaper/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Yallpaper;
 				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Yallpaper needs to set your wallpaper across all spaces";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
