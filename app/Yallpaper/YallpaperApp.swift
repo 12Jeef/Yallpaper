@@ -69,39 +69,103 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         NSApp.activate(ignoringOtherApps: false)
     }
 
+    // MARK: - Menu Bar
+
     func setupMenuBar() {
 
         statusItem = NSStatusBar.system.statusItem(
             withLength: NSStatusItem.variableLength
         )
-        
-        if let button = statusItem.button {
-            if let image = NSImage(named: "StatusIcon") {
-               image.isTemplate = true
-               image.size = NSSize(width: 14, height: 14)
 
-               button.image = image
-           }
+        if let button = statusItem.button,
+           let image = NSImage(named: "StatusIcon") {
+
+            image.isTemplate = true
+            image.size = NSSize(width: 14, height: 14)
+
+            button.image = image
         }
 
         let menu = NSMenu()
+
+        let refreshItem = NSMenuItem(
+            title: "Refresh Static Wallpaper",
+            action: #selector(refreshWallpaper),
+            keyEquivalent: ""
+        )
+        refreshItem.target = self
+        menu.addItem(refreshItem)
+
+        let openImageItem = NSMenuItem(
+            title: "Open Wallpaper File",
+            action: #selector(openWallpaperFile),
+            keyEquivalent: ""
+        )
+        openImageItem.target = self
+        menu.addItem(openImageItem)
+
+        let revealFolderItem = NSMenuItem(
+            title: "Reveal Wallpaper Folder",
+            action: #selector(revealWallpaperFolder),
+            keyEquivalent: ""
+        )
+        revealFolderItem.target = self
+        menu.addItem(revealFolderItem)
+
+        let reloadItem = NSMenuItem(
+            title: "Reload Web View",
+            action: #selector(reloadWebView),
+            keyEquivalent: ""
+        )
+        reloadItem.target = self
+        menu.addItem(reloadItem)
+
+        menu.addItem(.separator())
 
         let quitItem = NSMenuItem(
             title: "Quit Yallpaper",
             action: #selector(quitApp),
             keyEquivalent: ""
         )
-
         quitItem.target = self
-
         menu.addItem(quitItem)
 
         statusItem.menu = menu
     }
 
+    @objc func refreshWallpaper() {
+        captureWallpaper()
+    }
+
+    @objc func reloadWebView() {
+        webView.reload()
+    }
+
+    @objc func openWallpaperFile() {
+
+        do {
+            let url = try wallpaperURL()
+            NSWorkspace.shared.open(url)
+        } catch {
+            print("Failed to open wallpaper:", error)
+        }
+    }
+
+    @objc func revealWallpaperFolder() {
+
+        do {
+            let url = try wallpaperURL()
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        } catch {
+            print("Failed to reveal wallpaper:", error)
+        }
+    }
+
     @objc func quitApp() {
         NSApp.terminate(nil)
     }
+
+    // MARK: - WebView
 
     func webView(
         _ webView: WKWebView,
@@ -111,6 +175,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
             self.captureWallpaper()
         }
     }
+
+    // MARK: - Wallpaper Capture
 
     private func captureWallpaper() {
 
@@ -142,7 +208,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         }
     }
 
-    private func saveSnapshot(_ image: NSImage) throws -> URL {
+    // MARK: - Wallpaper Storage
+
+    private func wallpaperURL() throws -> URL {
 
         let appSupport =
             FileManager.default.urls(
@@ -161,8 +229,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
             withIntermediateDirectories: true
         )
 
-        let fileURL =
-            folder.appendingPathComponent("wallpaper.png")
+        return folder.appendingPathComponent("wallpaper.png")
+    }
+
+    private func saveSnapshot(_ image: NSImage) throws -> URL {
+
+        let fileURL = try wallpaperURL()
 
         guard
             let tiff = image.tiffRepresentation,
