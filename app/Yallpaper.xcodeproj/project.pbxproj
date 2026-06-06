@@ -11,7 +11,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		00936D062FCD374600DFC6E0 /* Yallpaper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Yallpaper.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		00936D062FCD374600DFC6E0 /* Yallpaper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Yallpaper.app; path = /Users/jeffrey/projects/Yallpaper/app/build/Debug/Yallpaper.app; sourceTree = "<absolute>"; };
 		00936D1F2FCDE8DD00DFC6E0 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -19,7 +19,6 @@
 		00936D472FCE563500DFC6E0 /* Exceptions for "Yallpaper" folder in "Yallpaper" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Assets.xcassets,
 				Info.plist,
 			);
 			target = 00936D052FCD374500DFC6E0 /* Yallpaper */;
@@ -53,17 +52,8 @@
 			isa = PBXGroup;
 			children = (
 				00936D1E2FCDE8DD00DFC6E0 /* Frameworks */,
-				00936D072FCD374600DFC6E0 /* Products */,
 				00936D352FCE191400DFC6E0 /* Yallpaper */,
 			);
-			sourceTree = "<group>";
-		};
-		00936D072FCD374600DFC6E0 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				00936D062FCD374600DFC6E0 /* Yallpaper.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 		00936D1E2FCDE8DD00DFC6E0 /* Frameworks */ = {
@@ -124,7 +114,7 @@
 			mainGroup = 00936CFD2FCD374500DFC6E0;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 00936D072FCD374600DFC6E0 /* Products */;
+			productRefGroup = 00936CFD2FCD374500DFC6E0;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -277,6 +267,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -284,6 +275,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Yallpaper/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Yallpaper;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Yallpaper needs to set your wallpaper across all spaces";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -309,6 +301,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -316,6 +309,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Yallpaper/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Yallpaper;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Yallpaper needs to set your wallpaper across all spaces";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";

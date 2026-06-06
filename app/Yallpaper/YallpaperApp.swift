@@ -19,8 +19,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
     var window: NSWindow!
     var webView: WKWebView!
     var server: SimpleHTTPServer!
+    var statusItem: NSStatusItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+
+        setupMenuBar()
 
         guard let screen = NSScreen.main else {
             NSApp.terminate(nil)
@@ -66,12 +69,44 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         NSApp.activate(ignoringOtherApps: false)
     }
 
-    // Called when index.html finishes loading
+    func setupMenuBar() {
+
+        statusItem = NSStatusBar.system.statusItem(
+            withLength: NSStatusItem.variableLength
+        )
+        
+        if let button = statusItem.button {
+            if let image = NSImage(named: "StatusIcon") {
+               image.isTemplate = true
+               image.size = NSSize(width: 14, height: 14)
+
+               button.image = image
+           }
+        }
+
+        let menu = NSMenu()
+
+        let quitItem = NSMenuItem(
+            title: "Quit Yallpaper",
+            action: #selector(quitApp),
+            keyEquivalent: ""
+        )
+
+        quitItem.target = self
+
+        menu.addItem(quitItem)
+
+        statusItem.menu = menu
+    }
+
+    @objc func quitApp() {
+        NSApp.terminate(nil)
+    }
+
     func webView(
         _ webView: WKWebView,
         didFinish navigation: WKNavigation!
     ) {
-        // Give JS/WebGPU a moment to render.
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.captureWallpaper()
         }
@@ -127,9 +162,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         )
 
         let fileURL =
-            folder.appendingPathComponent(
-                "wallpaper.png"
-            )
+            folder.appendingPathComponent("wallpaper.png")
 
         guard
             let tiff = image.tiffRepresentation,
