@@ -1,87 +1,67 @@
 import Foundation
-import Network
+import WebKit
 
-final class SimpleHTTPServer {
+final class YallpaperSchemeHandler: NSObject, WKURLSchemeHandler {
 
-    private let listener: NWListener
     private let rootURL: URL
 
-    init(port: UInt16 = 2345, rootURL: URL) throws {
+    init(rootURL: URL) {
         self.rootURL = rootURL
-
-        let params = NWParameters.tcp
-        listener = try NWListener(
-            using: params,
-            on: NWEndpoint.Port(rawValue: port)!
-        )
+        super.init()
     }
 
-    func start() {
-        listener.newConnectionHandler = { [weak self] conn in
-            self?.handle(conn)
+    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
+        guard let url = urlSchemeTask.request.url else {
+            urlSchemeTask.didFailWithError(NSError(
+                domain: "Yallpaper",
+                code: 1001,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid URL"]
+            ))
+            return
         }
 
-        listener.start(queue: .global())
-        print("http://127.0.0.1:2345")
-    }
+        let path = self.path(for: url)
+        let fileURL = rootURL.appendingPathComponent(path)
+        let mime = self.mime(for: fileURL.path)
 
-    private func handle(_ conn: NWConnection) {
-        conn.start(queue: .global())
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let response = HTTPURLResponse(
+                url: url,
+                statusCode: 200,
+                httpVersion: "HTTP/1.1",
+                headerFields: ["Content-Type": mime]
+            )!
 
-        conn.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, isComplete, _ in
+            urlSchemeTask.didReceive(response)
+            urlSchemeTask.didReceive(data)
+            urlSchemeTask.didFinish()
+        } catch {
+            let body = Data("404".utf8)
+            let response = HTTPURLResponse(
+                url: url,
+                statusCode: 404,
+                httpVersion: "HTTP/1.1",
+                headerFields: ["Content-Type": "text/plain"]
+            )!
 
-            guard let self, let data else {
-                conn.cancel()
-                return
-            }
-
-            let request = String(decoding: data, as: UTF8.self)
-
-            let path = self.parsePath(request)
-            let fileURL = self.rootURL.appendingPathComponent(path)
-
-            let fileData = (try? Data(contentsOf: fileURL)) ?? Data("404".utf8)
-            let mime = self.mime(for: fileURL.path)
-            
-            print(path, mime)
-
-            let response = self.buildResponse(
-                body: fileData,
-                mime: mime
-            )
-
-            conn.send(content: response, completion: .contentProcessed { _ in
-                conn.cancel()
-            })
+            urlSchemeTask.didReceive(response)
+            urlSchemeTask.didReceive(body)
+            urlSchemeTask.didFinish()
         }
     }
 
-    // MARK: - HTTP response builder (IMPORTANT PART)
-
-    private func buildResponse(body: Data, mime: String) -> Data {
-
-        let header =
-        "HTTP/1.1 200 OK\r\n" +
-        "Content-Type: \(mime)\r\n" +
-        "Content-Length: \(body.count)\r\n" +
-        "Connection: close\r\n" +
-        "\r\n"
-
-        var data = Data(header.utf8)
-        data.append(body)
-        return data
+    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
+        // no-op
     }
 
-    private func parsePath(_ request: String) -> String {
-        guard let line = request.split(separator: "\r\n").first else {
-            return "index.html"
+    private func path(for url: URL) -> String {
+        var rawPath = url.path
+        if rawPath.isEmpty || rawPath == "/" {
+            rawPath = "/index.html"
         }
 
-        let parts = line.split(separator: " ")
-        guard parts.count > 1 else { return "index.html" }
-
-        let raw = String(parts[1])
-        return raw == "/" ? "index.html" : String(raw.dropFirst())
+        return String(rawPath.dropFirst())
     }
 
     private func mime(for path: String) -> String {

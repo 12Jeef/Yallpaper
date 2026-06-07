@@ -18,7 +18,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
     var window: NSWindow!
     var webView: WKWebView!
-    var server: SimpleHTTPServer!
     var statusItem: NSStatusItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -50,17 +49,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
         let resourceURL = Bundle.main.resourceURL!
 
-        server = try! SimpleHTTPServer(
-            port: 2345,
-            rootURL: resourceURL
-        )
+        let config = WKWebViewConfiguration()
+        let schemeHandler = YallpaperSchemeHandler(rootURL: resourceURL)
+        config.setURLSchemeHandler(schemeHandler, forURLScheme: "yallpaper")
 
-        server.start()
-
-        webView = WKWebView(frame: screen.frame)
+        webView = WKWebView(frame: screen.frame, configuration: config)
         webView.navigationDelegate = self
 
-        let url = URL(string: "http://127.0.0.1:2345/index.html")!
+        let url = URL(string: "yallpaper://index.html")!
         webView.load(URLRequest(url: url))
 
         window.contentView = webView
