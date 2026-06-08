@@ -60,8 +60,7 @@ fn cloud(coord: vec2f, scale: vec2f, edge: f32) -> f32 {
   return pow(fbm3(vec3f(noise_coord.x, noise_coord.y, time_scale)) * 0.5 + 0.5, edge);
 }
 
-@toy @fragment
-fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+fn fs(pos: vec4f) -> vec4f {
   var color = vec3f(0.0, 0.0, 0.1);
   let time_scale = uniforms.time * 0.01;
   let frag = vec2f(pos.x, pos.y) * (2.0 / uniforms.dpr);
@@ -103,4 +102,12 @@ fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   color = color + vec3f(0.2, 0.25, 0.5) * clamp(1.0 - 3.5 * (1.0 - gradient_y), 0.0, 1.0);
 
   return vec4f(color, 1.0);
+}
+
+@toy @fragment
+fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+  let r = fs(pos + vec4f(-2.0, 0.0, 0.0, 0.0)).r;
+  let g = fs(pos + vec4f(0.0, 0.0, 0.0, 0.0)).g;
+  let b = fs(pos + vec4f(2.0, 0.0, 0.0, 0.0)).b;
+  return vec4f(r, g, b, 1.0);
 }
