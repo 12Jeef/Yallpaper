@@ -44,13 +44,20 @@ if (!(possibleBlob instanceof HTMLDivElement)) {
 const blob = possibleBlob;
 
 const possibleBlobLayer3 = document.querySelector(
-  "#app > div#blob > img#layer3",
-) as HTMLImageElement | null;
-if (!(possibleBlobLayer3 instanceof HTMLImageElement)) {
-  document.body.innerHTML = "Img Blob Layer3: Element not found";
-  throw new Error("Img Blob Layer3: Element not found");
+  "#app > div#blob > div#layer3",
+) as HTMLDivElement | null;
+if (!(possibleBlobLayer3 instanceof HTMLDivElement)) {
+  document.body.innerHTML = "Div Blob Layer3: Element not found";
+  throw new Error("Div Blob Layer3: Element not found");
 }
 const blobLayer3 = possibleBlobLayer3;
+
+const blobFirstChildren = Array.from(
+  document.querySelectorAll("#app > div#blob > div > img:first-child"),
+) as HTMLElement[];
+const blobLastChildren = Array.from(
+  document.querySelectorAll("#app > div#blob > div > img:last-child"),
+) as HTMLElement[];
 
 function initCanvas(canvas: HTMLCanvasElement, onResize?: () => void) {
   function resize() {
@@ -62,6 +69,10 @@ function initCanvas(canvas: HTMLCanvasElement, onResize?: () => void) {
   }
   resize();
   new ResizeObserver(resize).observe(document.body);
+}
+
+function getToD() {
+  return 0; // 0.5 + 0.5 * Math.sin(1 * (Date.now() / 1e3));
 }
 
 async function initSky() {
@@ -109,7 +120,7 @@ async function initSky() {
     primitive: { topology: "triangle-strip" },
   });
 
-  const uniformBufferSize = 16; // vec2 (resolution) + float (time) + float (dpr)
+  const uniformBufferSize = 24; // vec2 (resolution) + float (time) + float (dpr) + float (tod)
   const uniformBuffer = device.createBuffer({
     size: uniformBufferSize,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -130,6 +141,7 @@ async function initSky() {
     f32[1] = skyCanvas.height * (2 / dpr);
     f32[2] = t;
     f32[3] = dpr;
+    f32[4] = getToD();
     device.queue.writeBuffer(uniformBuffer, 0, u8);
 
     const view = ctx.getCurrentTexture().createView();
@@ -175,30 +187,27 @@ async function initGrass() {
   type vec3 = [number, number, number];
   type vec4 = [number, number, number, number];
 
-  // function nToVec2(v: number): vec2 {
-  //   return [v, v];
-  // }
-  // function nToVec3(v: number): vec3 {
-  //   return [v, v, v];
-  // }
-
   function mixN(a: number, b: number, t: number): number {
     return a + (b - a) * t;
   }
-  // function mixVec2(a: vec2, b: vec2, t: number): vec2 {
-  //   return [mixN(a[0], b[0], t), mixN(a[1], b[1], t)];
-  // }
   function mixVec3(a: vec3, b: vec3, t: number): vec3 {
     return [mixN(a[0], b[0], t), mixN(a[1], b[1], t), mixN(a[2], b[2], t)];
   }
-  // function mixVec4(a: vec4, b: vec4, t: number): vec4 {
-  //   return [
-  //     mixN(a[0], b[0], t),
-  //     mixN(a[1], b[1], t),
-  //     mixN(a[2], b[2], t),
-  //     mixN(a[3], b[3], t),
-  //   ];
-  // }
+  function multiMixN(t: number, values: number[]): number {
+    if (values.length <= 0) return 0;
+    if (values.length === 1) return values[0];
+    const n = values.length;
+    const i = Math.floor(t * (n - 1));
+    if (i < 0) return values[0];
+    if (i + 1 > n - 1) return values[n - 1];
+    return mixN(values[i], values[i + 1], t * (n - 1) - i);
+  }
+  function multiMixVec3(t: number, values: vec3[]): vec3 {
+    const x = values.map((v) => v[0]);
+    const y = values.map((v) => v[1]);
+    const z = values.map((v) => v[2]);
+    return [multiMixN(t, x), multiMixN(t, y), multiMixN(t, z)];
+  }
 
   function rgb(v: vec3): string {
     const [r, g, b] = v;
@@ -280,6 +289,8 @@ async function initGrass() {
   function frame() {
     const t = (Date.now() - tStart) / 1e3;
 
+    const tod = getToD();
+
     ctx1.clearRect(0, 0, grass1Canvas.width, grass1Canvas.height);
     ctx2.clearRect(0, 0, grass1Canvas.width, grass1Canvas.height);
     for (const g of grass) {
@@ -297,24 +308,62 @@ async function initGrass() {
       const y0 = y - Math.cos(theta) * size;
       const gr = ctx.createLinearGradient(x, y, x0, y0);
       const zT = Math.pow(z / zMax, 2);
+      const darkTip = mixVec3(
+        mixVec3([0.075, 0.05, 0.3], [0, 0, 0.1], zT),
+        [0, 0, 0.3],
+        xT * 0.5,
+      );
+      const darkBase = mixVec3(
+        mixVec3([0.1, 0.1, 0.5], [0.05, 0.02, 0.15], zT),
+        [0, 0, 0.15],
+        xT * 0.5,
+      );
+      const lightTip = mixVec3(
+        mixVec3([0.75, 1, 0.1], [0.5, 0.75, 0.1], zT),
+        [0.75, 1, 0.5],
+        xT * 0.5,
+      );
+      const lightBase = mixVec3(
+        mixVec3([0.5, 0.75, 0.3], [0.1, 0.5, 0.5], zT),
+        [0.75, 1, 0.5],
+        xT * 0.5,
+      );
       gr.addColorStop(
         1,
         rgb(
-          mixVec3(
-            mixVec3([0.075, 0.05, 0.3], [0, 0, 0.1], zT),
-            [0, 0, 0.3],
-            xT * 0.5,
-          ),
+          multiMixVec3(tod, [
+            darkTip,
+            mixVec3(
+              mixVec3([1, 0.5, 0.1], [0.5, 0.1, 0.25], zT),
+              [0.25, 0, 0.25],
+              xT * 0.5,
+            ),
+            mixVec3(
+              mixVec3([1, 0.75, 0.1], [1, 0.5, 0.1], zT),
+              [0.5, 0.1, 0.25],
+              xT * 0.5,
+            ),
+            lightTip,
+          ]),
         ),
       );
       gr.addColorStop(
         0,
         rgb(
-          mixVec3(
-            mixVec3([0.1, 0.1, 0.5], [0.05, 0.02, 0.15], zT),
-            [0, 0, 0.15],
-            xT * 0.5,
-          ),
+          multiMixVec3(tod, [
+            darkBase,
+            mixVec3(
+              mixVec3([0.5, 0.1, 0.25], [0.25, 0.1, 0.25], zT),
+              [0.25, 0, 0.25],
+              xT * 0.5,
+            ),
+            mixVec3(
+              mixVec3([1, 0.5, 0.1], [0.5, 0.1, 0.25], zT),
+              [0.5, 0.1, 0.25],
+              xT * 0.5,
+            ),
+            lightBase,
+          ]),
         ),
       );
       ctx.fillStyle = gr;
@@ -341,10 +390,12 @@ async function initGrass() {
       const r =
         mixN(0.01, 0.0075, rT) *
         Math.hypot(grass1Canvas.width, grass1Canvas.height);
-      const blink = Math.pow(
-        0.5 + 0.5 * Math.sin(blinkT * 2 * Math.PI + mixN(1.5, 3.5, blinkT) * t),
-        2,
-      );
+      const blink =
+        Math.pow(
+          0.5 +
+            0.5 * Math.sin(blinkT * 2 * Math.PI + mixN(1.5, 3.5, blinkT) * t),
+          2,
+        ) * mixN(1, 0, tod);
       const tBase = tT * 2 * Math.PI;
       const tx = tBase + mixN(0.5, 5, txT) * t;
       const ty = tBase + mixN(0.5, 5, tyT) * t;
@@ -374,6 +425,15 @@ async function initGrass() {
 
     blob.style.transform = `translate(-50%, -50%) translateY(${5 * Math.sin(1 + 0.5 * t)}px)`;
     blobLayer3.style.transform = `translate(-50%, -50%) rotate(${mixN(-5, 0, 0.5 + 0.5 * Math.sin(1 * t))}deg)`;
+
+    blob.style.filter = `contrast(${multiMixN(tod, [1.2, 1.3, 1.1])}) hue-rotate(${multiMixN(tod, [5, -25, -25])}deg) brightness(${multiMixN(tod, [1, 0.85, 1.1])})`;
+
+    blobFirstChildren.forEach(
+      (child) => (child.style.opacity = String(multiMixN(tod, [1, 0.25, 0]))),
+    );
+    blobLastChildren.forEach(
+      (child) => (child.style.opacity = String(multiMixN(tod, [0, 0.75, 1]))),
+    );
   }
   (async () => {
     while (true) {

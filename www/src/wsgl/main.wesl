@@ -5,6 +5,7 @@ struct Uniforms {
   resolution: vec2f,
   time: f32,
   dpr: f32,
+  tod: f32,
 };
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -65,6 +66,7 @@ fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   var color = vec3f(0.0, 0.0, 0.1);
   let time_scale = uniforms.time * 0.01;
   let frag = vec2f(pos.x, pos.y) * (2.0 / uniforms.dpr);
+
   let proj_coord_data = project(frag);
   let proj_coord = proj_coord_data.xy;
   let theta_t = proj_coord_data.z;
@@ -98,9 +100,17 @@ fn fs_main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let milky_way_4 = cloud(proj_coord + time_x10, vec2f(0.5, 0.25), 3.0) * pow(milky_way_mask / 2.0 + 0.75, 4.0);
   color = mix(color, mix(vec3f(0.05, 0.0, 0.2), vec3f(0.0, 0.0, 0.2), pow(clamp(milky_way_4 - 1.0, 0.0, 1.0), 3.0)), clamp(milky_way_4, 0.0, 1.0));
 
+  color = mix(color, mix(vec3f(1.0, 0.0, mix(0.5, 1.0, uniforms.tod)), mix(vec3f(0.3, 0.8, 1.0), vec3f(0.7, 0.9, 1.0), frag.y / uniforms.resolution.y), uniforms.tod), uniforms.tod);
+
+  let gradient_t0 = 1.0 - 2 * abs(uniforms.tod - 0.5);
+  let gradient_tearly = max(0.0, 1.0 - 2 * abs(uniforms.tod - 0.3));
+  let gradient_tlate = max(0.0, 1.0 - 2 * abs(uniforms.tod - 0.6));
   let gradient_y = frag.y / uniforms.resolution.y - frag.x / uniforms.resolution.x * 0.1 + 0.05;
-  color = color + vec3f(0.1, 0.15, 0.25) * clamp(1.0 - 1.5 * (1.0 - gradient_y), 0.0, 1.0);
-  color = color + vec3f(0.2, 0.25, 0.5) * clamp(1.0 - 3.5 * (1.0 - gradient_y), 0.0, 1.0);
+  let gradient_opacity = clamp(1.0 - 1.5 * (1.0 - gradient_y), 0.0, 1.0);
+  let layer1 = mix(vec3f(0.1, 0.15, 0.25), vec3f(mix(0.1, 0.75, gradient_tearly), mix(0.0, 0.1, gradient_tlate), 0.1), gradient_t0) * gradient_opacity;
+  let layer2 = mix(vec3f(0.2, 0.25, 0.5), vec3f(mix(0.25, 0.5, gradient_tearly), mix(0.1, 0.5, gradient_tlate), 0.25), gradient_t0) * gradient_opacity;
+  color = color + layer1 * gradient_opacity;
+  color = color + layer2 * gradient_opacity;
 
   return vec4f(color, 1.0);
 }
