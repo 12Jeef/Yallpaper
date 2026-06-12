@@ -14,7 +14,7 @@ class Yallpaper {
     }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKScriptMessageHandler {
 
     var window: NSWindow!
     var webView: WKWebView!
@@ -50,6 +50,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         let resourceURL = Bundle.main.resourceURL!
 
         let config = WKWebViewConfiguration()
+        config.userContentController.add(
+            self,
+            name: "yallpaper"
+        )
         let schemeHandler = YallpaperSchemeHandler(rootURL: resourceURL)
         config.setURLSchemeHandler(schemeHandler, forURLScheme: "yallpaper")
 
@@ -167,8 +171,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
         _ webView: WKWebView,
         didFinish navigation: WKNavigation!
     ) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.captureWallpaper()
+        }
+    }
+    
+    
+    func userContentController(
+        _ userContentController: WKUserContentController,
+        didReceive message: WKScriptMessage
+    ) {
+
+        guard message.name == "yallpaper" else {
+            return
+        }
+
+        guard
+            let body = message.body as? [String: Any],
+            let action = body["action"] as? String
+        else {
+            return
+        }
+
+        switch action {
+
+        case "captureWallpaper": DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.captureWallpaper()
+        }
+
+        default:
+            print("Unknown action:", action)
         }
     }
 
@@ -206,7 +238,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
 
     // MARK: - Wallpaper Storage
 
-    private func wallpaperURL() throws -> URL {
+    private func wallpaperFolder() throws -> URL {
 
         let appSupport =
             FileManager.default.urls(
@@ -225,10 +257,42 @@ class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate {
             withIntermediateDirectories: true
         )
 
-        return folder.appendingPathComponent("wallpaper.png")
+        return folder
+    }
+
+    private func wallpaperURL() throws -> URL {
+
+        let folder = try wallpaperFolder()
+
+        return folder.appendingPathComponent(
+            "wallpaper-\(UUID().uuidString).png"
+        )
+    }
+
+    private func cleanupOldWallpapers() throws {
+
+        let folder = try wallpaperFolder()
+
+        let files = try FileManager.default.contentsOfDirectory(
+            at: folder,
+            includingPropertiesForKeys: nil
+        )
+
+        for file in files {
+
+            let name = file.lastPathComponent
+
+            if name.hasPrefix("wallpaper-")
+                && name.hasSuffix(".png")
+            {
+                try? FileManager.default.removeItem(at: file)
+            }
+        }
     }
 
     private func saveSnapshot(_ image: NSImage) throws -> URL {
+
+        try cleanupOldWallpapers()
 
         let fileURL = try wallpaperURL()
 

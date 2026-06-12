@@ -73,7 +73,13 @@ function initCanvas(canvas: HTMLCanvasElement, onResize?: () => void) {
 
 const mediaHook = window.matchMedia("(prefers-color-scheme: dark)");
 let prefersDark = mediaHook.matches;
-mediaHook.addEventListener("change", (e) => (prefersDark = e.matches));
+mediaHook.addEventListener("change", (e) => {
+  prefersDark = e.matches;
+  // @ts-ignore
+  window.webkit.messageHandlers.yallpaper.postMessage({
+    action: "captureWallpaper",
+  });
+});
 
 function getToD() {
   return prefersDark ? 0 : 1; // 0.5 + 0.5 * Math.sin(1 * (Date.now() / 1e3));
