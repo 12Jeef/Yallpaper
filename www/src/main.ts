@@ -71,8 +71,12 @@ function initCanvas(canvas: HTMLCanvasElement, onResize?: () => void) {
   new ResizeObserver(resize).observe(document.body);
 }
 
+const mediaHook = window.matchMedia("(prefers-color-scheme: dark)");
+let prefersDark = mediaHook.matches;
+mediaHook.addEventListener("change", (e) => (prefersDark = e.matches));
+
 function getToD() {
-  return 0; // 0.5 + 0.5 * Math.sin(1 * (Date.now() / 1e3));
+  return prefersDark ? 0 : 1; // 0.5 + 0.5 * Math.sin(1 * (Date.now() / 1e3));
 }
 
 async function initSky() {
